@@ -195,6 +195,8 @@ void VR::CreateVRTextures()
     m_CreatingTextureID = Texture_RightEye;
     m_RightEyeTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("rightEye0", m_RenderWidth, m_RenderHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
     
+    std::cout << "m_RenderWidth: " << m_RenderWidth << ", m_RenderHeight: " << m_RenderHeight << "\n";
+
     m_CreatingTextureID = Texture_HUD;
     m_HUDTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("vrHUD", windowWidth, windowHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
     

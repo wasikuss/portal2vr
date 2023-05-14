@@ -21,18 +21,24 @@ struct PositionAngle
 class IClientEntityList
 {
 public:
-    // Get IClientNetworkable interface for specified entity
-    virtual void *GetClientNetworkable(int entnum) = 0;
-    virtual void *GetClientNetworkableFromHandle(int hEnt) = 0;
-    virtual void *GetClientUnknownFromHandle(int hEnt) = 0;
+	// Get IClientNetworkable interface for specified entity
+	virtual void* GetClientNetworkable(int entnum) = 0;
 
-    // NOTE: This function is only a convenience wrapper.
-    // It returns GetClientNetworkable( entnum )->GetIClientEntity().
-    virtual void *GetClientEntity(int entnum) = 0;
-    virtual void *GetClientEntityFromHandle(int hEnt) = 0;
+	virtual void* GetClientNetworkableArray(void) = 0;
+	virtual void* GetClientEntity(int entnum) = 0;
 
-    // Returns number of entities currently in use
-    virtual int					NumberOfEntities(bool bIncludeNonNetworkable) = 0;
+	// Returns number of entities currently in use
+	virtual int  NumberOfEntities(bool bIncludeNonNetworkable) = 0;
+
+	virtual void* GetClientUnknownFromHandle(int hEnt) = 0;
+	virtual void* GetClientNetworkableFromHandle(int hEnt) = 0;
+
+	// NOTE: This function is only a convenience wrapper.
+	// It returns GetClientNetworkable( entnum )->GetIClientEntity().
+	virtual void* GetClientEntityFromHandle(int hEnt) = 0;
+
+
+
 
     // Returns highest index actually used
     virtual int					GetHighestEntityIndex(void) = 0;
@@ -82,17 +88,17 @@ public:
 class IEngineClient
 {
 public:
-	virtual void *fn0() = 0;
-	virtual void *fn1() = 0;
-	virtual void *fn2() = 0;
-	virtual void *fn3() = 0;
-	virtual void *fn4() = 0;
-	virtual void *fn5() = 0;
-	virtual void *fn6() = 0;
+	virtual void *GetIntersectingSurfaces() = 0;
+	virtual void *GetLightForPoint() = 0;
+	virtual void *TraceLineMaterialAndLighting() = 0;
+	virtual void *ParseFile() = 0;
+	virtual void *CopyLocalFile() = 0;
+	virtual void *GetScreenSize() = 0;
+	virtual void *ServerCmd() = 0;
 	virtual void *ClientCmd(const char *szCmdString) = 0;
 	virtual bool GetPlayerInfo(int ent_num, player_info_t *pinfo) = 0;
 	virtual int GetPlayerForUserID(int userID) = 0;
-	virtual void *fn10() = 0;
+	virtual void TextMessageGet(char const*) = 0;
 	virtual bool Con_IsVisible() = 0;
 	virtual int GetLocalPlayer(void) = 0;
 	virtual int fn13() = 0;
@@ -100,7 +106,6 @@ public:
 	virtual int fn15() = 0;
 	virtual int fn16() = 0;
 	virtual int fn17() = 0;
-	virtual int fn18() = 0;
 	virtual QAngle* GetViewAngles(QAngle &angle) = 0;
 	virtual QAngle* SetViewAngles(QAngle &angle) = 0;
 	virtual void *sub_1005D230() = 0;
@@ -189,6 +194,8 @@ public:
 	virtual void *sub_1005D000() = 0;
 	virtual void *sub_1005DED0() = 0;
 	virtual void *sub_1005CBB0() = 0;
+	virtual void* sub_1005CBB0_1() = 0;
+	virtual void* sub_1005CBB0_2() = 0;
 	virtual void *ClientCmd_Unrestricted(const char *szCmdString) = 0;
 };
 
@@ -834,7 +841,7 @@ public:
 	virtual void sub_10016F80();
 	virtual void sub_10016FB0();
 	virtual void sub_10016FE0();
-	virtual void sub_10017000();
+	//virtual void sub_10017000();
 	virtual void ClearColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 	virtual void sub_100170E0();
 	virtual void sub_100172C0();
@@ -858,6 +865,8 @@ public:
 	virtual void sub_10017480();
 	virtual void nullsub_22();
 	virtual void sub_1002B990();
+	virtual void sub_1002B990_1();
+	virtual void sub_1002B990_2();
 	virtual void UnlockRenderData();
 	virtual void sub_100290F0();
 	virtual void sub_10029100();
@@ -940,6 +949,10 @@ public:
 	virtual void sub_10017780() = 0;
 	virtual void sub_10018180() = 0;
 	virtual void sub_10028B00() = 0;
+	virtual void sub_10028B00_1() = 0;
+	virtual void sub_10028B00_2() = 0;
+	virtual void sub_10028B00_3() = 0;
+	virtual void sub_10028B00_4() = 0;
 	virtual void OverrideAlphaWriteEnable(bool bEnable, bool bAlphaWriteEnable) = 0;
 };
 
@@ -1598,7 +1611,7 @@ public:
 		prevWep = this;
 		prevWeaponID = id;
 
-		if (id == MELEE)
+		/*if (id == MELEE)
 		{
 			typedef CMeleeWeaponInfoStore *(__thiscall *tGetMeleeWepInfo)(void *thisptr);
 			static tGetMeleeWepInfo oGetMeleeWepInfo = (tGetMeleeWepInfo)(g_Game->m_Offsets->GetMeleeWeaponInfoClient.address);
@@ -1611,7 +1624,7 @@ public:
 				prevViewmodelOffset = meleeViewmodelOffsets[wepName];
 				return prevViewmodelOffset;
 			}
-		}
+		}*/
 
 		if (viewmodelOffsets.find(id) != viewmodelOffsets.end())
 			prevViewmodelOffset = viewmodelOffsets[id];
@@ -2001,5 +2014,11 @@ public:
 	virtual void nullsub_33() = 0;
 	virtual void sub_10008FA0() = 0;
 	virtual void sub_10009A00() = 0;
+	virtual void sub_10009A00_1() = 0;
+	virtual void sub_10009A00_2() = 0;
+	virtual void sub_10009A00_3() = 0;
+	virtual void sub_10009A00_4() = 0;
+	virtual void sub_10009A00_5() = 0;
+	virtual void sub_10009A00_6() = 0;
 	virtual bool IsCursorVisible() = 0;
 };

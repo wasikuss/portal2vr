@@ -33,9 +33,12 @@ struct Hook {
 
 	int enableHook()
 	{
-		if (MH_EnableHook(pTarget) != MH_OK)
+		MH_STATUS status = MH_EnableHook(pTarget);
+		if (status != MH_OK)
 		{
-			Game::errorMsg("Failed to enable hook");
+			char errorString[256];
+			sprintf_s(errorString, 256, "Failed to enable hook: %i", status);
+			Game::errorMsg(errorString);
 			return 1;
 		}
 		isEnabled = true;

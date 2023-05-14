@@ -132,6 +132,9 @@ public:
 	virtual void QueryInterfaceEPKc() = 0; //CMaterialSystem::QueryInterface(char const*)
 	virtual void InitEv() = 0; //CMaterialSystem::Init(void)
 	virtual void ShutdownEv() = 0; //CMaterialSystem::Shutdown(void)
+	virtual void GetDependencies() = 0; //CMaterialSystem::GetDependencies(void)
+	virtual void GetTier() = 0;	//CMaterialSystem::GetTier(void)
+	virtual void Reconnect() = 0; //CMaterialSystem::Reconnect(void* (*)(char const*, int*), char const*)
 	virtual void InitEPKcP21IMaterialProxyFactoryPFPvS1_PiES7_() = 0; //CMaterialSystem::Init(char const*,IMaterialProxyFactory *,void * (*)(char const*,int *),void * (*)(char const*,int *))
 	virtual void SetShaderAPIEPKc() = 0; //CMaterialSystem::SetShaderAPI(char const*)
 	virtual void SetAdapterEii() = 0; //CMaterialSystem::SetAdapter(int,int)
@@ -141,6 +144,7 @@ public:
 	virtual void GetThreadModeEv() = 0; //CMaterialSystem::GetThreadMode(void)
 	virtual void IsRenderThreadSafeEv() = 0; //CMaterialSystem::IsRenderThreadSafe(void)
 	virtual void ExecuteQueuedEv() = 0; //CMaterialSystem::ExecuteQueued(void)
+	virtual void OnDebugEvent() = 0;  //CMaterialSystem::OnDebugEvent(char const*)
 	virtual void GetHardwareConfigEPKcPi() = 0; //CMaterialSystem::GetHardwareConfig(char const*,int *)
 	virtual void UpdateConfigEb() = 0; //CMaterialSystem::UpdateConfig(bool)
 	virtual void OverrideConfigERK23MaterialSystem_Config_tb() = 0; //CMaterialSystem::OverrideConfig(MaterialSystem_Config_t const&,bool)
@@ -159,6 +163,7 @@ public:
 	virtual void SpewDriverInfoEv() = 0; //CMaterialSystem::SpewDriverInfo(void)
 	virtual void GetBackBufferDimensions(int &, int &) = 0; //CMaterialSystem::GetBackBufferDimensions(int &,int &)
 	virtual ImageFormat GetBackBufferFormat() = 0; //CMaterialSystem::GetBackBufferFormat(void)
+	virtual void GetAspectRatioInfo() = 0; //CMaterialSystem::GetAspectRatioInfo(void)const
 	virtual void SupportsHDRModeE9HDRType_t() = 0; //CMaterialSystem::SupportsHDRMode(HDRType_t)
 	virtual void AddViewEPv() = 0; //CMaterialSystem::AddView(void *)
 	virtual void RemoveViewEPv() = 0; //CMaterialSystem::RemoveView(void *)
@@ -166,6 +171,7 @@ public:
 	virtual void BeginFrameEf() = 0; //CMaterialSystem::BeginFrame(float)
 	virtual void EndFrameEv() = 0; //CMaterialSystem::EndFrame(void)
 	virtual void FlushEb() = 0; //CMaterialSystem::Flush(bool)
+	virtual void GetCurrentFrameCount() = 0; //CMaterialSystem::GetCurrentFrameCount(void)
 	virtual void SwapBuffersEv() = 0; //CMaterialSystem::SwapBuffers(void)
 	virtual void EvictManagedResourcesEv() = 0; //CMaterialSystem::EvictManagedResources(void)
 	virtual void ReleaseResourcesEv() = 0; //CMaterialSystem::ReleaseResources(void)
@@ -174,6 +180,11 @@ public:
 	virtual void RemoveReleaseFuncEPFviE() = 0; //CMaterialSystem::RemoveReleaseFunc(void (*)(int))
 	virtual void AddRestoreFuncEPFviE() = 0; //CMaterialSystem::AddRestoreFunc(void (*)(int))
 	virtual void RemoveRestoreFuncEPFviE() = 0; //CMaterialSystem::RemoveRestoreFunc(void (*)(int))
+	virtual void AddEndFrameCleanupFunc() = 0; //CMaterialSystem::AddEndFrameCleanupFunc(void (*)(void))
+	virtual void RemoveEndFrameCleanupFunc() = 0; // CMaterialSystem::RemoveEndFrameCleanupFunc(void (*)(void))
+	virtual void OnLevelShutdown() = 0; // CMaterialSystem::OnLevelShutdown(void)
+	virtual void AddOnLevelShutdownFunc() = 0; // CMaterialSystem::AddOnLevelShutdownFunc(void (*)(void *),void *)
+	virtual void RemoveOnLevelShutdownFunc() = 0; // CMaterialSystem::RemoveOnLevelShutdownFunc(void (*)(void *),void *)
 	virtual void ResetTempHWMemoryEb() = 0; //CMaterialSystem::ResetTempHWMemory(bool)
 	virtual void HandleDeviceLostEv() = 0; //CMaterialSystem::HandleDeviceLost(void)
 	virtual void ShaderCountEv() = 0; //CMaterialSystem::ShaderCount(void)
@@ -199,6 +210,7 @@ public:
 	virtual void ReloadMaterialsEPKc() = 0; //CMaterialSystem::ReloadMaterials(char const*)
 	virtual void CreateMaterialEPKcP9KeyValues() = 0; //CMaterialSystem::CreateMaterial(char const*,KeyValues *)
 	virtual IMaterial *FindMaterial(char const *pMaterialName, const char *pTextureGroupName, bool complain = true, const char *pComplainPrefix = NULL) = 0; //CMaterialSystem::FindMaterial(char const*,char const*,bool,char const*)
+	virtual void IsMaterialLoaded() = 0; //CMaterialSystem::IsMaterialLoaded(char const*)
 	virtual void FirstMaterialEv() = 0; //CMaterialSystem::FirstMaterial(void)
 	virtual void NextMaterialEt() = 0; //CMaterialSystem::NextMaterial(ushort)
 	virtual void InvalidMaterialEv() = 0; //CMaterialSystem::InvalidMaterial(void)
@@ -229,6 +241,7 @@ public:
 														unsigned int renderTargetFlags = 0) = 0; //CMaterialSystem::CreateNamedRenderTargetTextureEx2(char const*,int,int,RenderTargetSizeMode_t,ImageFormat,MaterialRenderTargetDepth_t,uint,uint)
 	virtual void BeginLightmapAllocationEv() = 0; //CMaterialSystem::BeginLightmapAllocation(void)
 	virtual void EndLightmapAllocationEv() = 0; //CMaterialSystem::EndLightmapAllocation(void)
+	virtual void CleanupLightmaps() = 0; //CMaterialSystem::CleanupLightmaps(void)
 	virtual void AllocateLightmapEiiPiP9IMaterial() = 0; //CMaterialSystem::AllocateLightmap(int,int,int *,IMaterial *)
 	virtual void AllocateWhiteLightmapEP9IMaterial() = 0; //CMaterialSystem::AllocateWhiteLightmap(IMaterial *)
 	virtual void UpdateLightmapEiPiS0_PfS1_S1_S1_() = 0; //CMaterialSystem::UpdateLightmap(int,int *,int *,float *,float *,float *,float *)
@@ -236,11 +249,15 @@ public:
 	virtual void GetSortInfoEP25MaterialSystem_SortInfo_t() = 0; //CMaterialSystem::GetSortInfo(MaterialSystem_SortInfo_t *)
 	virtual void GetLightmapPageSizeEiPiS0_() = 0; //CMaterialSystem::GetLightmapPageSize(int,int *,int *)
 	virtual void ResetMaterialLightmapPageInfoEv() = 0; //CMaterialSystem::ResetMaterialLightmapPageInfo(void)
+	virtual void IsStereoSupported() = 0; //CMaterialSystem::IsStereoSupported(void)
+	virtual void IsStereoActiveThisFrame() = 0; //CMaterialSystem::IsStereoActiveThisFrame(void)const
+	virtual void NVStereoUpdate() = 0;//CMaterialSystem::NVStereoUpdate(void)
 	virtual void ClearBuffersEbbb() = 0; //CMaterialSystem::ClearBuffers(bool,bool,bool)
+	virtual void SpinPresent() = 0; //CMaterialSystem::SpinPresent(unsigned int)
 	virtual IMatRenderContext *GetRenderContext() = 0; //CMaterialSystem::GetRenderContext(void)
 	
-	char pad_0004[10932]; //0x0004
-	bool isGameRunning; //0x2AB8
+	char pad_0004[11180]; //0x0004
+	bool isGameRunning; //0x2AB8 -> 0x2BB0
 }; //Size: 0x2ABC
-static_assert(sizeof(IMaterialSystem) == 0x2ABC);
+static_assert(sizeof(IMaterialSystem) == 0x2BB4);
 

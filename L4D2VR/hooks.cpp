@@ -24,25 +24,25 @@ Hooks::Hooks(Game *game)
 
 	hkGetRenderTarget.enableHook();
 	hkCalcViewModelView.enableHook();
-	hkServerFireTerrorBullets.enableHook();
+	/*hkServerFireTerrorBullets.enableHook();
 	hkClientFireTerrorBullets.enableHook();
 	hkProcessUsercmds.enableHook();
 	hkReadUsercmd.enableHook();
 	hkWriteUsercmdDeltaToBuffer.enableHook();
-	hkWriteUsercmd.enableHook();
+	hkWriteUsercmd.enableHook();*/
 	hkAdjustEngineViewport.enableHook();
 	hkViewport.enableHook();
 	hkGetViewport.enableHook();
-	hkCreateMove.enableHook();
+	/*hkCreateMove.enableHook();
 	hkTestMeleeSwingCollisionClient.enableHook();
 	hkTestMeleeSwingCollisionServer.enableHook();
 	hkDoMeleeSwingServer.enableHook();
 	hkStartMeleeSwingServer.enableHook();
 	hkPrimaryAttackServer.enableHook();
 	hkItemPostFrameServer.enableHook();
-	hkGetPrimaryAttackActivity.enableHook();
-	hkEyePosition.enableHook();
-	hkDrawModelExecute.enableHook();
+	hkGetPrimaryAttackActivity.enableHook();*/
+	//hkEyePosition.enableHook();
+	//hkDrawModelExecute.enableHook();
 	hkRenderView.enableHook();
 	hkPushRenderTargetAndViewport.enableHook();
 	hkPopRenderTargetAndViewport.enableHook();
@@ -71,24 +71,6 @@ int Hooks::initSourceHooks()
 	LPVOID calcViewModelViewAddr = (LPVOID)(m_Game->m_Offsets->CalcViewModelView.address);
 	hkCalcViewModelView.createHook(calcViewModelViewAddr, &dCalcViewModelView);
 
-	LPVOID serverFireTerrorBulletsAddr = (LPVOID)(m_Game->m_Offsets->ServerFireTerrorBullets.address);
-	hkServerFireTerrorBullets.createHook(serverFireTerrorBulletsAddr, &dServerFireTerrorBullets);
-
-	LPVOID clientFireTerrorBulletsAddr = (LPVOID)(m_Game->m_Offsets->ClientFireTerrorBullets.address);
-	hkClientFireTerrorBullets.createHook(clientFireTerrorBulletsAddr, &dClientFireTerrorBullets);
-
-	LPVOID ProcessUsercmdsAddr = (LPVOID)(m_Game->m_Offsets->ProcessUsercmds.address);
-	hkProcessUsercmds.createHook(ProcessUsercmdsAddr, &dProcessUsercmds);
-
-	LPVOID ReadUserCmdAddr = (LPVOID)(m_Game->m_Offsets->ReadUserCmd.address);
-	hkReadUsercmd.createHook(ReadUserCmdAddr, &dReadUsercmd);
-
-	LPVOID WriteUsercmdDeltaToBufferAddr = (LPVOID)(m_Game->m_Offsets->WriteUsercmdDeltaToBuffer.address);
-	hkWriteUsercmdDeltaToBuffer.createHook(WriteUsercmdDeltaToBufferAddr, &dWriteUsercmdDeltaToBuffer);
-
-	LPVOID WriteUsercmdAddr = (LPVOID)(m_Game->m_Offsets->WriteUsercmd.address);
-	hkWriteUsercmd.createHook(WriteUsercmdAddr, &dWriteUsercmd);
-
 	LPVOID AdjustEngineViewportAddr = (LPVOID)(m_Game->m_Offsets->AdjustEngineViewport.address);
 	hkAdjustEngineViewport.createHook(AdjustEngineViewportAddr, &dAdjustEngineViewport);
 
@@ -98,32 +80,11 @@ int Hooks::initSourceHooks()
 	LPVOID GetViewportAddr = (LPVOID)(m_Game->m_Offsets->GetViewport.address);
 	hkGetViewport.createHook(GetViewportAddr, &dGetViewport);
 
-	LPVOID MeleeSwingClientAddr = (LPVOID)(m_Game->m_Offsets->TestMeleeSwingClient.address);
-	hkTestMeleeSwingCollisionClient.createHook(MeleeSwingClientAddr, &dTestMeleeSwingCollisionClient);
-
-	LPVOID MeleeSwingServerAddr = (LPVOID)(m_Game->m_Offsets->TestMeleeSwingServer.address);
-	hkTestMeleeSwingCollisionServer.createHook(MeleeSwingServerAddr, &dTestMeleeSwingCollisionServer);
-
-	LPVOID DoMeleeSwingServerAddr = (LPVOID)(m_Game->m_Offsets->DoMeleeSwingServer.address);
-	hkDoMeleeSwingServer.createHook(DoMeleeSwingServerAddr, &dDoMeleeSwingServer);
-
-	LPVOID StartMeleeSwingServerAddr = (LPVOID)(m_Game->m_Offsets->StartMeleeSwingServer.address);
-	hkStartMeleeSwingServer.createHook(StartMeleeSwingServerAddr, &dStartMeleeSwingServer);
-
-	LPVOID PrimaryAttackServerAddr = (LPVOID)(m_Game->m_Offsets->PrimaryAttackServer.address);
-	hkPrimaryAttackServer.createHook(PrimaryAttackServerAddr, &dPrimaryAttackServer);
-
-	LPVOID ItemPostFrameServerAddr = (LPVOID)(m_Game->m_Offsets->ItemPostFrameServer.address);
-	hkItemPostFrameServer.createHook(ItemPostFrameServerAddr, &dItemPostFrameServer);
-
-	LPVOID GetPrimaryAttackActivityAddr = (LPVOID)(m_Game->m_Offsets->GetPrimaryAttackActivity.address);
-	hkGetPrimaryAttackActivity.createHook(GetPrimaryAttackActivityAddr, &dGetPrimaryAttackActivity);
-
 	LPVOID EyePositionAddr = (LPVOID)(m_Game->m_Offsets->EyePosition.address);
 	hkEyePosition.createHook(EyePositionAddr, &dEyePosition);
 
-	LPVOID DrawModelExecuteAddr = (LPVOID)(m_Game->m_Offsets->DrawModelExecute.address);
-	hkDrawModelExecute.createHook(DrawModelExecuteAddr, &dDrawModelExecute);
+	/*LPVOID DrawModelExecuteAddr = (LPVOID)(m_Game->m_Offsets->DrawModelExecute.address);
+	hkDrawModelExecute.createHook(DrawModelExecuteAddr, &dDrawModelExecute);*/
 
 	LPVOID PushRenderTargetAddr = (LPVOID)(m_Game->m_Offsets->PushRenderTargetAndViewport.address);
 	hkPushRenderTargetAndViewport.createHook(PushRenderTargetAddr, &dPushRenderTargetAndViewport);
@@ -140,13 +101,13 @@ int Hooks::initSourceHooks()
 	LPVOID PrePushRenderTargetAddr = (LPVOID)(m_Game->m_Offsets->PrePushRenderTarget.address);
 	hkPrePushRenderTarget.createHook(PrePushRenderTargetAddr, &dPrePushRenderTarget);
 
-	void *clientMode = nullptr;
+	/*void *clientMode = nullptr;
 	while (!clientMode)
 	{
 		Sleep(10);
 		clientMode = **(void ***)(m_Game->m_Offsets->g_pClientMode.address);
 	}
-	hkCreateMove.createHook( (*(void ***)clientMode)[27], dCreateMove );
+	hkCreateMove.createHook( (*(void ***)clientMode)[27], dCreateMove );*/
 
 	return 1;
 }
@@ -288,19 +249,19 @@ int Hooks::dClientFireTerrorBullets(int playerId, const Vector &vecOrigin, const
 float __fastcall Hooks::dProcessUsercmds(void *ecx, void *edx, edict_t *player, void *buf, int numcmds, int totalcmds, int dropped_packets, bool ignore, bool paused)
 {
 	// Function pointer for CBaseEntity::entindex
-	typedef int(__thiscall *tEntindex)(void *thisptr);
+	/*typedef int(__thiscall *tEntindex)(void *thisptr);
 	static tEntindex oEntindex = (tEntindex)(m_Game->m_Offsets->CBaseEntity_entindex.address);
 
 	IServerUnknown * pUnknown = player->m_pUnk;
 	Server_BaseEntity *pPlayer = (Server_BaseEntity*)pUnknown->GetBaseEntity();
 
 	int index = oEntindex(pPlayer);
-	m_Game->m_CurrentUsercmdID = index;
+	m_Game->m_CurrentUsercmdID = index;*/
 
 	float result = hkProcessUsercmds.fOriginal(ecx, player, buf, numcmds, totalcmds, dropped_packets, ignore, paused);
 
 	// check if swinging melee wep
-	if (m_Game->m_PlayersVRInfo[index].isUsingVR && m_Game->m_PlayersVRInfo[index].isMeleeing)
+	/*if (m_Game->m_PlayersVRInfo[index].isUsingVR && m_Game->m_PlayersVRInfo[index].isMeleeing)
 	{
 		typedef Server_WeaponCSBase *(__thiscall *tGetActiveWep)(void *thisptr);
 		static tGetActiveWep oGetActiveWep = (tGetActiveWep)(m_Game->m_Offsets->GetActiveWeapon.address);
@@ -359,7 +320,7 @@ float __fastcall Hooks::dProcessUsercmds(void *ecx, void *edx, edict_t *player, 
 		m_Game->m_PlayersVRInfo[index].isNewSwing = true;
 	}
 
-	m_Game->m_PlayersVRInfo[index].prevControllerAngle = m_Game->m_PlayersVRInfo[index].controllerAngle;
+	m_Game->m_PlayersVRInfo[index].prevControllerAngle = m_Game->m_PlayersVRInfo[index].controllerAngle;*/
 
 	return result;
 }
@@ -418,7 +379,7 @@ void __fastcall Hooks::dWriteUsercmdDeltaToBuffer(void *ecx, void *edx, int a1, 
 	return hkWriteUsercmdDeltaToBuffer.fOriginal(ecx, a1, buf, from, to, isnewcommand);
 }
 
-int Hooks::dWriteUsercmd(void *buf, CUserCmd *to, CUserCmd *from)
+/*int Hooks::dWriteUsercmd(void *buf, CUserCmd *to, CUserCmd *from)
 {
 	if (m_VR->m_IsVREnabled)
 	{
@@ -469,7 +430,7 @@ int Hooks::dWriteUsercmd(void *buf, CUserCmd *to, CUserCmd *from)
 		return 1;
 	}
 	return hkWriteUsercmd.fOriginal(buf, to, from);
-}
+}*/
 
 void Hooks::dAdjustEngineViewport(int &x, int &y, int &width, int &height)
 {
@@ -484,26 +445,6 @@ void Hooks::dViewport(void *ecx, void *edx, int x, int y, int width, int height)
 void Hooks::dGetViewport(void *ecx, void *edx, int &x, int &y, int &width, int &height)
 {
 	hkGetViewport.fOriginal(ecx, x, y, width, height);
-}
-
-int Hooks::dTestMeleeSwingCollisionClient(void *ecx, void *edx, Vector const &vec)
-{
-	return hkTestMeleeSwingCollisionClient.fOriginal(ecx, vec);
-}
-
-int Hooks::dTestMeleeSwingCollisionServer(void *ecx, void *edx, Vector const &vec)
-{
-	return hkTestMeleeSwingCollisionServer.fOriginal(ecx, vec);
-}
-
-void Hooks::dDoMeleeSwingServer(void *ecx, void *edx)
-{
-	return hkDoMeleeSwingServer.fOriginal(ecx);
-}
-
-void Hooks::dStartMeleeSwingServer(void *ecx, void *edx, void *player, bool a3)
-{
-	return hkStartMeleeSwingServer.fOriginal(ecx, player, a3);
 }
 
 int Hooks::dPrimaryAttackServer(void *ecx, void *edx)
@@ -569,6 +510,8 @@ void Hooks::dPushRenderTargetAndViewport(void *ecx, void *edx, ITexture *pTextur
 	if (!m_VR->m_CreatedVRTextures)
 		return hkPushRenderTargetAndViewport.fOriginal(ecx, pTexture, pDepthTexture, nViewX, nViewY, nViewW, nViewH);
 
+	std::cout << "dPushRenderTargetAndViewport: " << m_PushHUDStep << "\n";
+
 	if (m_PushHUDStep == 2)
 		++m_PushHUDStep;
 	else
@@ -604,6 +547,8 @@ void Hooks::dPopRenderTargetAndViewport(void *ecx, void *edx)
 	if (!m_VR->m_CreatedVRTextures)
 		return hkPopRenderTargetAndViewport.fOriginal(ecx);
 
+	std::cout << "dPopRenderTargetAndViewport: " << m_PushHUDStep << "\n";
+
 	m_PushHUDStep = 0;
 
 	if (m_PushedHud)
@@ -628,6 +573,8 @@ void Hooks::dVGui_Paint(void *ecx, void *edx, int mode)
 
 int Hooks::dIsSplitScreen()
 {
+	std::cout << "dIsSplitScreen: " << m_PushHUDStep << "\n";
+
 	if (m_PushHUDStep == 0)
 		++m_PushHUDStep;
 	else
@@ -638,6 +585,8 @@ int Hooks::dIsSplitScreen()
 
 DWORD *Hooks::dPrePushRenderTarget(void *ecx, void *edx, int a2)
 {
+	std::cout << "dPrePushRenderTarget: " << m_PushHUDStep << "\n";
+
 	if (m_PushHUDStep == 1)
 		++m_PushHUDStep;
 	else

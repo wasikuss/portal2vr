@@ -13,7 +13,7 @@ Game::Game()
         Sleep(50);
     while (!(m_BaseEngine = (uintptr_t)GetModuleHandle("engine.dll")))
         Sleep(50);
-    while (!(m_BaseMaterialSystem = (uintptr_t)GetModuleHandle("MaterialSystem.dll")))
+    while (!(m_BaseMaterialSystem = (uintptr_t)GetModuleHandle("materialsystem.dll")))
         Sleep(50);
     while (!(m_BaseServer = (uintptr_t)GetModuleHandle("server.dll")))
         Sleep(50);
@@ -21,8 +21,8 @@ Game::Game()
         Sleep(50);
 
     m_ClientEntityList = (IClientEntityList *)GetInterface("client.dll", "VClientEntityList003");
-    m_EngineTrace = (IEngineTrace *)GetInterface("engine.dll", "EngineTraceClient003");
-    m_EngineClient = (IEngineClient *)GetInterface("engine.dll", "VEngineClient013");
+    m_EngineTrace = (IEngineTrace *)GetInterface("engine.dll", "EngineTraceClient004");
+    m_EngineClient = (IEngineClient *)GetInterface("engine.dll", "VEngineClient015");
     m_MaterialSystem = (IMaterialSystem *)GetInterface("MaterialSystem.dll", "VMaterialSystem080");
     m_ClientViewRender = (IViewRender *)GetInterface("client.dll", "VEngineRenderView013");
     m_EngineViewRender = (IViewRender *)GetInterface("engine.dll", "VEngineRenderView013");

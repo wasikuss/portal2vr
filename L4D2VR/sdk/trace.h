@@ -280,11 +280,11 @@ class IEngineTrace
 {
 public:
 
-	virtual void	fn0() = 0;
-	virtual void	fn1() = 0;
-	virtual void	fn2() = 0;
-	virtual void	fn3() = 0;
-	virtual void	fn4() = 0;
+	virtual void	GetPointContents() = 0;
+	virtual void	GetPointContents_WorldOnly() = 0;
+	virtual void	GetPointContents_Collideable() = 0;
+	virtual void	ClipRayToEntity() = 0;
+	virtual void	ClipRayToCollideable() = 0;
 	virtual void	TraceRay(const Ray_t &ray, unsigned int fMask, CTraceFilter *pTraceFilter, trace_t *pTrace) = 0;
 };
 
