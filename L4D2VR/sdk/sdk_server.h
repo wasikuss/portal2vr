@@ -626,3 +626,40 @@ public:
 	virtual void sub_10063F90() = 0;
 
 };
+
+class CPortalGameMovement
+{
+public:
+	virtual ~CPortalGameMovement() = 0;
+	C_BasePlayer* player; //0x0004
+}; //Size: 0x8
+static_assert(sizeof(CPortalGameMovement) == 0x8);
+
+class CBaseEntity
+{
+public:
+	virtual ~CBaseEntity() = 0;
+	char pad_0004[340]; //0x0004
+	void* m_hGroundEntity; //0x0158
+	float m_flGroundChangeTime; //0x015C
+	Vector m_vecBaseVelocity; //0x0160
+	Vector m_vecAbsVelocity; //0x016C
+	Vector m_vecAngVelocity; //0x0178
+	char pad_0184[48]; //0x0184 // matrix3x4_t m_rgflCoordinateFrame;
+	float m_flFriction; //0x01B4
+	float m_flElasticity; //0x01B8
+	float m_flLocalTime; //0x01BC
+	float m_flVPhysicsUpdateLocalTime; //0x01C0
+	float m_flMoveDoneTime; //0x01C4
+	int32_t m_nPushEnumCount; //0x01C8
+	Vector m_vecAbsOrigin; //0x01CC
+	QAngle m_angAbsRotation; //0x01D8
+	Vector m_vecVelocity; //0x01E4
+	void* m_pBlocker; //0x01F0
+	char pad_01F4[300]; //0x01F4
+	char* m_iGlobalname; //0x0320
+	char* m_iParent; //0x0324
+	char pad_0328[44]; //0x0328
+	char* m_iszDamageFilterName; //0x0354
+}; //Size: 0x0358
+static_assert(sizeof(CBaseEntity) == 0x0358);

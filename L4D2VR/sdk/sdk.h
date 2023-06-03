@@ -21,6 +21,8 @@ struct PositionAngle
 class IClientEntityList
 {
 public:
+	virtual	~IClientEntityList() { }
+
 	// Get IClientNetworkable interface for specified entity
 	virtual void* GetClientNetworkable(int entnum) = 0;
 
@@ -249,33 +251,54 @@ enum StereoEye_t
 	STEREO_EYE_MAX = 3,
 };
 
-class VMatrix;
+enum MotionBlurMode_t
+{
+	MOTION_BLUR_DISABLE = 1,
+	MOTION_BLUR_GAME = 2,			// Game uses real-time inter-frame data
+	MOTION_BLUR_SFM = 3				// Use SFM data passed in CViewSetup structure
+};
 
+class VMatrix;
 
 class CViewSetup
 {
 public:
+	inline char* STR() {
+		char errorString[512];
+		sprintf_s(errorString, 512, "X: %i (%i), Y: %i (%i)", x, m_nUnscaledX, y, m_nUnscaledY, width, m_nUnscaledWidth, height, m_nUnscaledHeight, fov, fovViewmodel);
+		return errorString;
+	}
+
 	int32_t x; //0x0000
-	int32_t m_nUnscaledX; //0x0004
+	float m_nUnscaledX; //0x0004
 	int32_t y; //0x0008
-	int32_t m_nUnscaledY; //0x000C
+	float m_nUnscaledY; //0x000C
 	int32_t width; //0x0010
 	int32_t m_nUnscaledWidth; //0x0014
 	int32_t height; //0x0018
 	int32_t m_nUnscaledHeight; //0x001C
-	char pad_0020[20]; //0x0020
-	float fov; //0x0034
-	float fovViewmodel; //0x0038
-	Vector origin; //0x003C
-	Vector angles; //0x0048
-	float zNear; //0x0054
-	float zFar; //0x0058
-	float zNearViewmodel; //0x005C
-	float zFarViewmodel; //0x0060
-	float m_flAspectRatio; //0x0064
-	char pad_0068[1660]; //0x0068
-}; //Size: 0x06E4
-static_assert(sizeof(CViewSetup) == 0x6E4);
+	char pad_0020[72]; //0x0020
+	float fov; //0x0068
+	float fovViewmodel; //0x006C
+	Vector origin; //0x0070
+	Vector angles; //0x007C
+	float zNear; //0x0088
+	float zFar; //0x008C
+	float zNearViewmodel; //0x0090
+	float zFarViewmodel; //0x0094
+	float m_flAspectRatio; //0x0098
+	float m_flNearBlurDepth; //0x009C
+	float m_flNearFocusDepth; //0x00A0
+	float m_flFarFocusDepth; //0x00A4
+	float m_flFarBlurDepth; //0x00A8
+	float m_flNearBlurRadius; //0x00AC
+	float m_flFarBlurRadius; //0x00B0
+	int m_nDoFQuality; //0x00B4
+	MotionBlurMode_t m_nMotionBlurMode; //0x00B8
+	char pad_00bc[68]; //0x00BC
+	int32_t m_EdgeBlur; //0x0100
+}; //Size: 0x0104
+static_assert(sizeof(CViewSetup) == 0x0104);
 
 class IBaseClientDLL
 {
@@ -772,22 +795,22 @@ public:
 	virtual void BeginRender();
 	virtual void EndRender();
 	virtual void Flush(bool flushHardware = false);
-	virtual void sub_10016C70();
+	virtual void BindLocalCubemap();
 	virtual void SetRenderTarget(ITexture *pTexture);
 	virtual ITexture *GetRenderTarget();
-	virtual void sub_10025440();
-	virtual void sub_100274A0();
-	virtual void sub_10016CA0();
-	virtual void sub_10016CD0();
+	virtual void GetRenderTargetDimensions(int& width, int& height) const = 0;
+	virtual void Bind();
+	virtual void BindLightmapPage();
+	virtual void DepthRange();
 	virtual void ClearBuffers(bool bClearColor, bool bClearDepth, bool bClearStencil = false);
-	virtual void sub_100240F0();
-	virtual void sub_100278F0();
-	virtual void sub_100277A0();
-	virtual void sub_10027970();
-	virtual void sub_10016E20();
-	virtual void sub_10016E50();
-	virtual void sub_10029080();
-	virtual void sub_10028380();
+	virtual void ReadPixels();
+	virtual void SetLightingState();
+	virtual void SetLights();
+	virtual void SetAmbientLightCube();
+	virtual void CopyRenderTargetToTexture(ITexture* pTexture);
+	virtual void SetFrameBufferCopyTexture();
+	virtual void GetFrameBufferCopyTexture();
+	virtual void MatrixMode();
 	virtual void sub_100283B0();
 	virtual void sub_100283E0();
 	virtual void sub_10028460();
@@ -1171,8 +1194,8 @@ public:
 	virtual void *sub_10019770() = 0;
 	virtual void *sub_10019780() = 0;
 	virtual Vector EyePosition() = 0;
-	virtual void *sub_10019DF0() = 0;
-	virtual void *sub_10019E00() = 0;
+	virtual Vector *EyeAngles() = 0;
+	virtual Vector *LocalEyeAngles() = 0;
 	virtual void *sub_10019E10() = 0;
 	virtual void *sub_1001A090() = 0;
 	virtual void *sub_10019870() = 0;
@@ -1279,11 +1302,9 @@ public:
 	virtual void *GetFootstepRunThreshold() = 0;
 	virtual void *GetClass() = 0;
 	virtual void *sub_1001E0C0() = 0;
+	virtual void* Weapon_GetSlot(int i) = 0;
 	virtual void *sub_1001E0A0() = 0;
 	virtual void *sub_10040B90() = 0;
-	virtual void *sub_10012980() = 0;
-	virtual void *sub_10013330() = 0;
-	virtual void *Weapon_GetSlot(int i) = 0;
 	virtual C_BaseCombatWeapon *GetActiveWeapon() = 0;
 };
 
@@ -1642,8 +1663,8 @@ public:
 	virtual void *sub_10021E00() = 0;
 	virtual void *nullsub_240() = 0;
 	virtual void *sub_10021980() = 0;
-	virtual void *CalcViewModelView() = 0;
 	virtual void *sub_1001F0F0() = 0;
+	virtual void CalcViewModelView(const Vector& eyeOrigin, const QAngle& eyeAngles) = 0;
 	virtual void *sub_10069800() = 0;
 	virtual void *sub_1001F290() = 0;
 	virtual void *sub_1001F270() = 0;
@@ -1744,24 +1765,19 @@ public:
 
 	bool IsMeleeWeaponActive()
 	{
-		C_WeaponCSBase *weapon = (C_WeaponCSBase *)GetActiveWeapon();
+		/*C_WeaponCSBase *weapon = (C_WeaponCSBase *)GetActiveWeapon();
 		if (weapon)
-			return weapon->GetWeaponID() == 19;
+			return weapon->GetWeaponID() == 19;*/
 
 		return false;
 	}
 
-	char pad_0000[252]; //0x0004
-	Vector m_vecVelocity; //0x0100
-	char pad_010C[56]; //0x010C
+	char pad_0004[260]; //0x0004
+	Vector m_vecVelocity; //0x0108
+	char pad_010C[48]; //0x0114
 	int m_hGroundEntity; //0x0144
-	char pad_0148[4872]; //0x0148
-	int m_iObserverMode; //0x1450
-}; //Size: 0x1454
-static_assert(sizeof(C_BasePlayer) == 0x1454);
-
-
-
+}; //Size: 0x0148
+static_assert(sizeof(C_BasePlayer) == 0x0148);
 
 class CBaseEdict
 {
@@ -1844,6 +1860,39 @@ public:
 
 	friend void InitializeEntityDLLFields(void *pEdict);
 };
+
+/*struct cplane_t
+{
+	Vector	normal;
+	float	dist;
+	byte	type;
+	byte	signbits;
+	byte	pad[2];
+};
+struct csurface_t
+{
+	const char* name;
+	short			surfaceProps;
+	unsigned short	flags;
+};
+
+struct trace_t : public CGameTrace
+{
+	Vector start;
+	Vector end;
+	cplane_t plane;
+	float fraction;
+	int contents;
+	WORD dispFlags;
+	bool allsolid;
+	bool startsolid;
+	float fractionleftsolid;
+	csurface_t surface;
+	int hitgroup;
+	short physicsbone;
+	CBaseEntity* m_pEnt;
+	int hitbox;
+}*/
 
 struct edict_t : public CBaseEdict
 {

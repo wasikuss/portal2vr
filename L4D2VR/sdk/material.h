@@ -216,7 +216,7 @@ public:
 	virtual void InvalidMaterialEv() = 0; //CMaterialSystem::InvalidMaterial(void)
 	virtual void GetMaterialEt() = 0; //CMaterialSystem::GetMaterial(ushort)
 	virtual void GetNumMaterialsEv() = 0; //CMaterialSystem::GetNumMaterials(void)
-	virtual void FindTextureEPKcS1_bi() = 0; //CMaterialSystem::FindTexture(char const*,char const*,bool,int)
+	virtual ITexture  *FindTexture(char const* pTextureName, const char* pTextureGroupName, bool complain = true, int nAdditionalCreationFlags = 0) = 0; //CMaterialSystem::FindTexture(char const*,char const*,bool,int)
 	virtual void IsTextureLoadedEPKc() = 0; //CMaterialSystem::IsTextureLoaded(char const*)
 	virtual void CreateProceduralTextureEPKcS1_ii11ImageFormati() = 0; //CMaterialSystem::CreateProceduralTexture(char const*,char const*,int,int,ImageFormat,int)
 	virtual void BeginRenderTargetAllocation() = 0; //CMaterialSystem::BeginRenderTargetAllocation(void)

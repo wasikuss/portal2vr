@@ -165,6 +165,8 @@ void VR::Update()
         {
             IMatRenderContext *rndrContext = m_Game->m_MaterialSystem->GetRenderContext();
             rndrContext->SetRenderTarget(NULL);
+            rndrContext->Release();
+
             m_Game->m_CachedArmsModel = false;
             m_CreatedVRTextures = false; // Have to recreate textures otherwise some workshop maps won't render
         }
@@ -183,7 +185,10 @@ void VR::Update()
 void VR::CreateVRTextures()
 {
     int windowWidth, windowHeight;
-    m_Game->m_MaterialSystem->GetRenderContext()->GetWindowSize(windowWidth, windowHeight);
+
+    IMatRenderContext* rndrContext = m_Game->m_MaterialSystem->GetRenderContext();
+    rndrContext->GetWindowSize(windowWidth, windowHeight);
+    rndrContext->Release();
 
     m_Game->m_MaterialSystem->isGameRunning = false;
     m_Game->m_MaterialSystem->BeginRenderTargetAllocation();
@@ -194,8 +199,6 @@ void VR::CreateVRTextures()
     
     m_CreatingTextureID = Texture_RightEye;
     m_RightEyeTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("rightEye0", m_RenderWidth, m_RenderHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
-    
-    std::cout << "m_RenderWidth: " << m_RenderWidth << ", m_RenderHeight: " << m_RenderHeight << "\n";
 
     m_CreatingTextureID = Texture_HUD;
     m_HUDTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("vrHUD", windowWidth, windowHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
@@ -859,10 +862,9 @@ void VR::UpdateTracking()
 
     int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
     C_BasePlayer *localPlayer = (C_BasePlayer *)m_Game->GetClientEntity(playerIndex);
+
     if (!localPlayer)
         return;
-
-    m_Game->m_IsMeleeWeaponActive = localPlayer->IsMeleeWeaponActive();
 
     // HMD tracking
     QAngle hmdAngLocal = m_HmdPose.TrackedDeviceAng;	
@@ -962,18 +964,22 @@ void VR::UpdateTracking()
     QAngle::AngleVectors(leftControllerAngLocal, &m_LeftControllerForward, &m_LeftControllerRight, &m_LeftControllerUp);			
     QAngle::AngleVectors(rightControllerAngLocal, &m_RightControllerForward, &m_RightControllerRight, &m_RightControllerUp);	
 
-    // Adjust controller angle 45 degrees downward
-    m_LeftControllerForward = VectorRotate(m_LeftControllerForward, m_LeftControllerRight, -45.0);
-    m_LeftControllerUp = VectorRotate(m_LeftControllerUp, m_LeftControllerRight, -45.0);
+    const float offset = -30;
 
-    m_RightControllerForward = VectorRotate(m_RightControllerForward, m_RightControllerRight, -45.0);
-    m_RightControllerUp = VectorRotate(m_RightControllerUp, m_RightControllerRight, -45.0);
+    // Adjust controller angle 45 degrees downward
+    m_LeftControllerForward = VectorRotate(m_LeftControllerForward, m_LeftControllerRight, offset);
+    m_LeftControllerUp = VectorRotate(m_LeftControllerUp, m_LeftControllerRight, offset);
+
+    m_RightControllerForward = VectorRotate(m_RightControllerForward, m_RightControllerRight, offset);
+    m_RightControllerUp = VectorRotate(m_RightControllerUp, m_RightControllerRight, offset);
 
     // controller angles
     QAngle::VectorAngles(m_LeftControllerForward, m_LeftControllerUp, m_LeftControllerAngAbs);
     QAngle::VectorAngles(m_RightControllerForward, m_RightControllerUp, m_RightControllerAngAbs);
     
-    PositionAngle viewmodelOffset = localPlayer->GetViewmodelOffset();
+    //PositionAngle viewmodelOffset = localPlayer->GetViewmodelOffset();
+    //PositionAngle viewmodelOffset = PositionAngle{ {8.3537, 3, -8}, {0,0,0} };
+    PositionAngle viewmodelOffset = PositionAngle{ {4.5, -1, 1.5}, {0,0,0} };
 
     m_ViewmodelPosOffset = viewmodelOffset.position;
     m_ViewmodelAngOffset = viewmodelOffset.angle;

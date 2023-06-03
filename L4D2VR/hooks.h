@@ -11,7 +11,7 @@ class QAngle;
 class Vector;
 class edict_t;
 class ModelRenderInfo_t;
-
+struct trace_tx;
 
 template <typename T>
 struct Hook {
@@ -61,7 +61,7 @@ typedef ITexture *(__thiscall *tGetRenderTarget)(void *thisptr);
 typedef void(__thiscall *tRenderView)(void *thisptr, CViewSetup &setup, CViewSetup &hudViewSetup, int nClearFlags, int whatToDraw);
 typedef bool(__thiscall *tCreateMove)(void *thisptr, float flInputSampleTime, CUserCmd *cmd);
 typedef void(__thiscall *tEndFrame)(PVOID);
-typedef void(__thiscall *tCalcViewModelView)(void *thisptr, void *owner, const Vector &eyePosition, const QAngle &eyeAngles);
+typedef void(__thiscall *tCalcViewModelView)(void *thisptr, const Vector &eyePosition, const QAngle &eyeAngles);
 typedef int(__cdecl *tFireTerrorBullets)(int playerId, const Vector &vecOrigin, const QAngle &vecAngles, int a4, int a5, int a6, float a7);
 typedef float(__thiscall *tProcessUsercmds)(void *thisptr, edict_t *player, void *buf, int numcmds, int totalcmds, int dropped_packets, bool ignore, bool paused);
 typedef int(__cdecl *tReadUsercmd)(void *buf, CUserCmd *move, CUserCmd *from);
@@ -83,7 +83,11 @@ typedef void(__thiscall *tPopRenderTargetAndViewport)(void *thisptr);
 typedef void(__thiscall *tVgui_Paint)(void *thisptr, int mode);
 typedef int(__cdecl *tIsSplitScreen)();
 typedef DWORD *(__thiscall *tPrePushRenderTarget)(void *thisptr, int a2);
-
+typedef ITexture* (__thiscall* tGetFullScreenTexture)();
+typedef Vector* (__thiscall* tWeapon_ShootPosition)(void* thisptr, Vector* shootPos);
+typedef float(__thiscall* tTraceFirePortal)(void* thisptr, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
+typedef void(__thiscall* tHandlePortallingClient)(void* thisptr);
+typedef Vector* (__thiscall* tEyeAngles)(void* thisptr);
 
 class Hooks
 {
@@ -119,6 +123,11 @@ public:
 	static inline Hook<tVgui_Paint> hkVgui_Paint;
 	static inline Hook<tIsSplitScreen> hkIsSplitScreen;
 	static inline Hook<tPrePushRenderTarget> hkPrePushRenderTarget;
+	static inline Hook<tGetFullScreenTexture> hkGetFullScreenTexture;
+	static inline Hook<tWeapon_ShootPosition> hkWeapon_ShootPosition;
+	static inline Hook<tTraceFirePortal> hkTraceFirePortal;
+	static inline Hook<tHandlePortallingClient> hkHandlePortallingClient;
+	static inline Hook<tEyeAngles> hkEyeAngles;
 
 	Hooks() {};
 	Hooks(Game *game);
@@ -132,7 +141,7 @@ public:
 	static void __fastcall dRenderView(void *ecx, void *edx, CViewSetup &setup, CViewSetup &hudViewSetup, int nClearFlags, int whatToDraw);
 	static bool __fastcall dCreateMove(void *ecx, void *edx, float flInputSampleTime, CUserCmd *cmd);
 	static void __fastcall dEndFrame(void *ecx, void *edx);
-	static void __fastcall dCalcViewModelView(void *ecx, void *edx, void *owner, const Vector &eyePosition, const QAngle &eyeAngles);
+	static void __fastcall dCalcViewModelView(void *ecx, void *edx, const Vector &eyePosition, const QAngle &eyeAngles);
 	static int dServerFireTerrorBullets(int playerId, const Vector &vecOrigin, const QAngle &vecAngles, int a4, int a5, int a6, float a7);
 	static int dClientFireTerrorBullets(int playerId, const Vector &vecOrigin, const QAngle &vecAngles, int a4, int a5, int a6, float a7);
 	static float __fastcall dProcessUsercmds(void *ecx, void *edx, edict_t *player, void *buf, int numcmds, int totalcmds, int dropped_packets, bool ignore, bool paused);
@@ -156,7 +165,12 @@ public:
 	static void __fastcall dVGui_Paint(void *ecx, void *edx, int mode);
 	static int __fastcall dIsSplitScreen();
 	static DWORD *__fastcall dPrePushRenderTarget(void *ecx, void *edx, int a2);
-
+	static ITexture *__fastcall dGetFullScreenTexture();
+	static Vector* __fastcall dWeapon_ShootPosition(void* ecx, void* edx, Vector* shootPos);
+	static float __fastcall dTraceFirePortal(void* ecx, void* edx, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
+	static void __fastcall dHandlePortallingClient(void* ecx, void* edx);
+	static Vector* __fastcall dEyeAngles(void* ecx, void* edx);
+	
 	static inline int m_PushHUDStep;
 	static inline bool m_PushedHud;
 };
