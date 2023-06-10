@@ -449,6 +449,7 @@
     <ClInclude Include="sdk\vector.h" />
     <ClInclude Include="sigscanner.h" />
     <ClInclude Include="vr.h" />
+    <ClInclude Include="worldsize.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\dxvk\src\d3d9\d3d9_adapter.cpp" />

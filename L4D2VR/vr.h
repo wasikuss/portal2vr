@@ -169,6 +169,8 @@ public:
 	TrackedDevicePoseData m_LeftControllerPose;
 	TrackedDevicePoseData m_RightControllerPose;
 
+	bool m_ApplyPortalRotationOffset = false;
+	QAngle m_PortalRotationOffset = {0, 0, 0};
 	float m_RotationOffset = 0;
 	std::chrono::steady_clock::time_point m_PrevFrameTime;
 
@@ -204,6 +206,7 @@ public:
 	Vector GetRightControllerAbsPos();
 	Vector GetRecommendedViewmodelAbsPos();
 	QAngle GetRecommendedViewmodelAbsAngle();
+	void UpdateHMDAngles();
 	void UpdateTracking();
 	Vector GetViewAngle();
 	Vector GetViewOriginLeft();
@@ -214,4 +217,5 @@ public:
 	void GetPoseData(vr::TrackedDevicePose_t &poseRaw, TrackedDevicePoseData &poseOut);
 	void ParseConfigFile();
 	void WaitForConfigUpdate();
+	Vector Trace(uint32_t* localPlayer);
 };

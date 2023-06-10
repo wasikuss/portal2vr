@@ -86,8 +86,10 @@ typedef DWORD *(__thiscall *tPrePushRenderTarget)(void *thisptr, int a2);
 typedef ITexture* (__thiscall* tGetFullScreenTexture)();
 typedef Vector* (__thiscall* tWeapon_ShootPosition)(void* thisptr, Vector* shootPos);
 typedef float(__thiscall* tTraceFirePortal)(void* thisptr, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
-typedef void(__thiscall* tHandlePortallingClient)(void* thisptr);
-typedef Vector* (__thiscall* tEyeAngles)(void* thisptr);
+typedef int(__thiscall* tDrawSelf)(void* thisptr, int x, int y, int w, int h, const void* clr, float flApparentZ);
+typedef bool(__thiscall* tClipTransform)(const Vector& point, Vector* pClip);
+typedef void(__thiscall* tPlayerPortalled)(void* thisptr, void* a2, __int64 a3);
+
 
 class Hooks
 {
@@ -126,9 +128,10 @@ public:
 	static inline Hook<tGetFullScreenTexture> hkGetFullScreenTexture;
 	static inline Hook<tWeapon_ShootPosition> hkWeapon_ShootPosition;
 	static inline Hook<tTraceFirePortal> hkTraceFirePortal;
-	static inline Hook<tHandlePortallingClient> hkHandlePortallingClient;
-	static inline Hook<tEyeAngles> hkEyeAngles;
-
+	static inline Hook<tDrawSelf> hkDrawSelf;
+	static inline Hook<tClipTransform> hkClipTransform;
+	static inline Hook<tPlayerPortalled> hkPlayerPortalled;
+	
 	Hooks() {};
 	Hooks(Game *game);
 
@@ -168,9 +171,13 @@ public:
 	static ITexture *__fastcall dGetFullScreenTexture();
 	static Vector* __fastcall dWeapon_ShootPosition(void* ecx, void* edx, Vector* shootPos);
 	static float __fastcall dTraceFirePortal(void* ecx, void* edx, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
-	static void __fastcall dHandlePortallingClient(void* ecx, void* edx);
-	static Vector* __fastcall dEyeAngles(void* ecx, void* edx);
-	
+	static int __fastcall dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h, const void* clr, float flApparentZ);
+	static bool dClipTransform(const Vector& point, Vector* pScreen);
+	static void __fastcall dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3);
+
+	static bool ScreenTransform(const Vector& point, Vector* pScreen);
+
+
 	static inline int m_PushHUDStep;
 	static inline bool m_PushedHud;
 };

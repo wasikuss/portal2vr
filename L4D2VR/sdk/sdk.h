@@ -7,6 +7,7 @@
 #include "offsets.h"
 #include "usercmd.h"
 #include "material.h"
+#include "worldsize.h"
 #include <unordered_map>
 
 class C_BaseCombatWeapon;

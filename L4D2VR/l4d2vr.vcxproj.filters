@@ -810,6 +810,9 @@
     <ClInclude Include="sdk\sdk_server.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="worldsize.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">

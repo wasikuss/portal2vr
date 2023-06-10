@@ -856,19 +856,29 @@ QAngle VR::GetRecommendedViewmodelAbsAngle()
     return result;
 }
 
+void VR::UpdateHMDAngles() {
+    QAngle hmdAngLocal = m_HmdPose.TrackedDeviceAng;
+
+    hmdAngLocal.y += m_RotationOffset;
+    // Wrap angle from -180 to 180
+    hmdAngLocal.y -= 360 * std::floor((hmdAngLocal.y + 180) / 360);
+
+    QAngle::AngleVectors(hmdAngLocal, &m_HmdForward, &m_HmdRight, &m_HmdUp);
+
+    m_HmdAngAbs = hmdAngLocal;
+}
+
 void VR::UpdateTracking()
 {
     GetPoses();
 
     int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
-    C_BasePlayer *localPlayer = (C_BasePlayer *)m_Game->GetClientEntity(playerIndex);
-
+    C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
     if (!localPlayer)
         return;
 
     // HMD tracking
-    QAngle hmdAngLocal = m_HmdPose.TrackedDeviceAng;	
-    Vector hmdPosLocal = m_HmdPose.TrackedDevicePos;	
+    Vector hmdPosLocal = m_HmdPose.TrackedDevicePos;
 
     Vector deltaPosition = hmdPosLocal - m_HmdPosLocalPrev;
     Vector hmdPosCorrected = m_HmdPosCorrectedPrev + deltaPosition;
@@ -878,11 +888,7 @@ void VR::UpdateTracking()
     m_HmdPosCorrectedPrev = hmdPosCorrected;
     m_HmdPosLocalPrev = hmdPosLocal;
 
-    hmdAngLocal.y += m_RotationOffset;
-    // Wrap angle from -180 to 180
-    hmdAngLocal.y -= 360 * std::floor((hmdAngLocal.y + 180) / 360);
-
-    QAngle::AngleVectors(hmdAngLocal, &m_HmdForward, &m_HmdRight, &m_HmdUp);				
+    UpdateHMDAngles();
 
     m_HmdPosLocalInWorld = hmdPosCorrected * m_VRScale;
 
@@ -903,7 +909,7 @@ void VR::UpdateTracking()
 
     if (!m_RoomscaleActive)
         m_CameraAnchor += m_SetupOrigin - m_SetupOriginPrev;
-    
+
     m_CameraAnchor.z = m_SetupOrigin.z + m_HeightOffset;
 
     m_HmdPosAbs = m_CameraAnchor - Vector(0, 0, 64) + m_HmdPosLocalInWorld;
@@ -931,8 +937,6 @@ void VR::UpdateTracking()
     if (VectorLength(m_SetupOriginToHMD) > 150)
         ResetPosition();
 
-    m_HmdAngAbs = hmdAngLocal;
-
     m_HmdPosAbsPrev = m_HmdPosAbs;
     m_SetupOriginPrev = m_SetupOrigin;
 
@@ -941,7 +945,7 @@ void VR::UpdateTracking()
     m_EyeZ = m_EyeToHeadTransformPosRight.z;
 
     // Hand tracking
-    Vector leftControllerPosLocal = m_LeftControllerPose.TrackedDevicePos;											
+    Vector leftControllerPosLocal = m_LeftControllerPose.TrackedDevicePos;
     QAngle leftControllerAngLocal = m_LeftControllerPose.TrackedDeviceAng;
 
     Vector rightControllerPosLocal = m_RightControllerPose.TrackedDevicePos;
@@ -961,12 +965,12 @@ void VR::UpdateTracking()
     // Wrap angle from -180 to 180
     rightControllerAngLocal.y -= 360 * std::floor((rightControllerAngLocal.y + 180) / 360);
 
-    QAngle::AngleVectors(leftControllerAngLocal, &m_LeftControllerForward, &m_LeftControllerRight, &m_LeftControllerUp);			
-    QAngle::AngleVectors(rightControllerAngLocal, &m_RightControllerForward, &m_RightControllerRight, &m_RightControllerUp);	
+    QAngle::AngleVectors(leftControllerAngLocal, &m_LeftControllerForward, &m_LeftControllerRight, &m_LeftControllerUp);
+    QAngle::AngleVectors(rightControllerAngLocal, &m_RightControllerForward, &m_RightControllerRight, &m_RightControllerUp);
 
     const float offset = -30;
 
-    // Adjust controller angle 45 degrees downward
+    // Adjust controller angle downward
     m_LeftControllerForward = VectorRotate(m_LeftControllerForward, m_LeftControllerRight, offset);
     m_LeftControllerUp = VectorRotate(m_LeftControllerUp, m_LeftControllerRight, offset);
 
@@ -976,9 +980,7 @@ void VR::UpdateTracking()
     // controller angles
     QAngle::VectorAngles(m_LeftControllerForward, m_LeftControllerUp, m_LeftControllerAngAbs);
     QAngle::VectorAngles(m_RightControllerForward, m_RightControllerUp, m_RightControllerAngAbs);
-    
-    //PositionAngle viewmodelOffset = localPlayer->GetViewmodelOffset();
-    //PositionAngle viewmodelOffset = PositionAngle{ {8.3537, 3, -8}, {0,0,0} };
+
     PositionAngle viewmodelOffset = PositionAngle{ {4.5, -1, 1.5}, {0,0,0} };
 
     m_ViewmodelPosOffset = viewmodelOffset.position;
@@ -1008,24 +1010,34 @@ Vector VR::GetViewAngle()
 
 Vector VR::GetViewOriginLeft()
 {
-    Vector viewOriginLeft;
-
-    viewOriginLeft = m_HmdPosAbs + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
-    viewOriginLeft = viewOriginLeft + (m_HmdRight * (-((m_Ipd * m_IpdScale * m_VRScale) / 2)));
+    Vector viewOriginLeft = m_HmdPosAbs + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
+    viewOriginLeft -= m_HmdRight * ((m_Ipd * m_IpdScale * m_VRScale) / 2);
 
     return viewOriginLeft;
 }
 
 Vector VR::GetViewOriginRight()
 {
-    Vector viewOriginRight;
-
-    viewOriginRight = m_HmdPosAbs + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
-    viewOriginRight = viewOriginRight + (m_HmdRight * (m_Ipd * m_IpdScale * m_VRScale) / 2);
+    Vector viewOriginRight = m_HmdPosAbs + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
+    viewOriginRight += m_HmdRight * ((m_Ipd * m_IpdScale * m_VRScale) / 2);
 
     return viewOriginRight;
 }
 
+Vector VR::Trace(uint32_t* localPlayer) {
+    Vector vecStart = GetRightControllerAbsPos();
+    Vector vecEnd = vecStart + m_RightControllerForward * MAX_TRACE_LENGTH;
+
+    CGameTrace trace;
+    Ray_t ray;
+    CTraceFilterSkipNPCsAndPlayers tracefilter((IHandleEntity*)localPlayer, 0);
+
+    ray.Init(vecStart, vecEnd);
+
+    m_Game->m_EngineTrace->TraceRay(ray, MASK_SHOT, &tracefilter, &trace);
+
+    return trace.endpos;
+}
 
 void VR::ResetPosition()
 {

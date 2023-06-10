@@ -24,8 +24,6 @@ Hooks::Hooks(Game *game)
 
 	hkGetRenderTarget.enableHook();
 	hkCalcViewModelView.enableHook();
-	/*hkServerFireTerrorBullets.enableHook();
-	hkClientFireTerrorBullets.enableHook();*/
 
 	hkProcessUsercmds.enableHook();
 	hkReadUsercmd.enableHook();
@@ -37,14 +35,8 @@ Hooks::Hooks(Game *game)
 	hkViewport.enableHook();
 	hkGetViewport.enableHook();
 
-	/*hkCreateMove.enableHook();
-	hkTestMeleeSwingCollisionClient.enableHook();
-	hkTestMeleeSwingCollisionServer.enableHook();
-	hkDoMeleeSwingServer.enableHook();
-	hkStartMeleeSwingServer.enableHook();
-	hkPrimaryAttackServer.enableHook();
-	hkItemPostFrameServer.enableHook();
-	hkGetPrimaryAttackActivity.enableHook();*/
+	//hkCreateMove.enableHook();
+	//hkItemPostFrameServer.enableHook();
 
 	hkEyePosition.enableHook();
 
@@ -59,7 +51,8 @@ Hooks::Hooks(Game *game)
 
 	hkWeapon_ShootPosition.enableHook();
 	hkTraceFirePortal.enableHook();
-	hkHandlePortallingClient.enableHook();
+	hkDrawSelf.enableHook();
+	hkPlayerPortalled.enableHook();
 }
 
 Hooks::~Hooks()
@@ -133,11 +126,15 @@ int Hooks::initSourceHooks()
 	LPVOID TraceFirePortalAddr = (LPVOID)(m_Game->m_Offsets->TraceFirePortalServer.address);
 	hkTraceFirePortal.createHook(TraceFirePortalAddr, &dTraceFirePortal);
 
-	LPVOID HandlePortallingClientAddr = (LPVOID)(m_Game->m_Offsets->HandlePortallingServer.address);
-	hkHandlePortallingClient.createHook(HandlePortallingClientAddr, &dHandlePortallingClient);
+	LPVOID DrawSelfAddr = (LPVOID)(m_Game->m_Offsets->DrawSelf.address);
+	hkDrawSelf.createHook(DrawSelfAddr, &dDrawSelf);
+	
+	LPVOID ClipTransformAddr = (LPVOID)(m_Game->m_Offsets->ClipTransform.address);
+	hkClipTransform.createHook(ClipTransformAddr, &dClipTransform);
 
-	LPVOID EyeAnglesAddr = (LPVOID)(m_Game->m_Offsets->EyeAngles.address);
-	hkEyeAngles.createHook(EyeAnglesAddr, &dEyeAngles);
+	LPVOID PlayerPortalledAddr = (LPVOID)(m_Game->m_Offsets->PlayerPortalled.address);
+	hkPlayerPortalled.createHook(PlayerPortalledAddr, &dPlayerPortalled);
+
 
 	/*void *clientMode = nullptr;
 	while (!clientMode)
@@ -145,7 +142,12 @@ int Hooks::initSourceHooks()
 		Sleep(10);
 		clientMode = **(void ***)(m_Game->m_Offsets->g_pClientMode.address);
 	}
-	hkCreateMove.createHook( (*(void ***)clientMode)[27], dCreateMove );*/
+
+	hkCreateMove.createHook( (*(void ***)clientMode)[23], dCreateMove );*/
+
+	LPVOID CreateMoveAddr = (LPVOID)(m_Game->m_Offsets->CreateMove.address);
+	hkCreateMove.createHook(CreateMoveAddr, &dCreateMove);
+	
 
 	return 1;
 }
@@ -173,60 +175,37 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 
 	IMaterialSystem* matSystem = m_Game->m_MaterialSystem;
 
-	/*int width, height;
-	IMatRenderContext* rndrContext = matSystem->GetRenderContext();
-	rndrContext->SetRenderTarget(NULL);
-	rndrContext->GetRenderTargetDimensions(width, height);
-	rndrContext->Release();
-	std::cout << "RT - W: " << width << ", H: " << height << "\n";
-
-	//rndrContext->SetRenderTarget(NULL);
-	hkRenderView.fOriginal(ecx, setup, hudViewSetup, nClearFlags, whatToDraw);
-
-	m_VR->m_RenderedNewFrame = true;
-
-	return;*/
-
-	//std::cout << "CViewSetup: " << &setup << "\n";
-	//std::cout << "CViewSetup: " << &setup << ", " << &hudViewSetup << "\n";
-
-	//std::cout << "CViewSetup.x: " << setup.x << "\n";
-
-	//std::cout << "CViewSetup: " << &hudViewSetup << "\n";
-
 	CViewSetup leftEyeView = setup;
 	CViewSetup rightEyeView = setup;
 
-	//std::cout << "Width: " << m_VR->m_RenderWidth << ", Height: " << m_VR->m_RenderHeight << ", Fov" << m_VR->m_Fov << ", Aspect: " << m_VR->m_Aspect << "\n";
-	//std::cout << "Width: " << setup.width << ", Height: " << setup.height << ", Fov" << setup.fov << ", Aspect: " << setup.m_flAspectRatio << "\n";
-
-	/*Vector a, b;
-
-	a = m_VR->GetViewOriginLeft();
-	b = m_VR->GetViewAngle();
-
-	std::cout << "GetViewOriginLeft: (" << a.x << ", " << a.y << ", " << a.z << ") ";
-	std::cout << "GetViewAngle: (" << b.x << ", " << b.y << ", " << b.z << ")\n";*/
-
-	/*std::cout << "Hud - ";
-	std::cout << "X: " << hudViewSetup.x << ", Y: " << hudViewSetup.y << " ";
-	std::cout << "uX: " << hudViewSetup.m_nUnscaledX << ", uY: " << hudViewSetup.m_nUnscaledY << " ";
-	std::cout << "w: " << hudViewSetup.width << ", h: " << hudViewSetup.height << " ";
-	std::cout << "uw: " << hudViewSetup.m_nUnscaledWidth << ", uh: " << hudViewSetup.m_nUnscaledHeight << " ";*/
-	/*std::cout << "Origin: (" << hudViewSetup.origin.x << ", " << hudViewSetup.origin.y << ", " << hudViewSetup.origin.z << ") ";
-	std::cout << "Angles: (" << hudViewSetup.angles.x << ", " << hudViewSetup.angles.y << ", " << hudViewSetup.angles.z << ")\n";*/
-
-	// Copies the game presentation RT address
-	/*ITexture* rt = rndrContext->GetRenderTarget();
-	rndrContext->Release();*/
-	//hudViewSetup.x = 500;
-	/*hudViewSetup.width = m_VR->m_RenderWidth;
+	hudViewSetup.width = m_VR->m_RenderWidth;
 	hudViewSetup.height = m_VR->m_RenderHeight;
-	hudViewSetup.m_flAspectRatio = m_VR->m_Aspect;*/
+	hudViewSetup.m_flAspectRatio = m_VR->m_Aspect;
 	/*hudViewSetup.origin = m_VR->GetViewOriginLeft();
 	hudViewSetup.angles = m_VR->GetViewAngle();*/
 
-	m_VR->m_SetupOrigin = setup.origin;
+	Vector position = setup.origin;
+
+	if (m_VR->m_ApplyPortalRotationOffset) {
+		Vector vec = position - m_VR->m_SetupOrigin;
+		float distance = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+
+		std::cout << "dRenderView: " << distance << "\n";
+		
+		// Rudimentary portalling detection
+		if (distance > 35) {
+			m_VR->m_RotationOffset += m_VR->m_PortalRotationOffset.y;
+			m_VR->UpdateHMDAngles();
+
+			m_VR->m_ApplyPortalRotationOffset = false;
+		}
+	}
+
+	Vector hmdAngle = m_VR->GetViewAngle();
+	QAngle inGameAngle(hmdAngle.x, hmdAngle.y, hmdAngle.z);
+	m_Game->m_EngineClient->SetViewAngles(inGameAngle);
+
+	m_VR->m_SetupOrigin = position;
 
 	// Left eye CViewSetup
 	leftEyeView.x = 0;
@@ -238,15 +217,9 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	leftEyeView.zNear = 6;
 	leftEyeView.zNearViewmodel = 6;
 	leftEyeView.origin = m_VR->GetViewOriginLeft();
-	leftEyeView.angles = m_VR->GetViewAngle();
-
-	Vector hmdAngle = m_VR->GetViewAngle();
-	QAngle inGameAngle(hmdAngle.x, hmdAngle.y, hmdAngle.z);
-	m_Game->m_EngineClient->SetViewAngles(inGameAngle);
+	leftEyeView.angles = hmdAngle;
 
 	IMatRenderContext* rndrContext = matSystem->GetRenderContext();
-	//rndrContext->SetRenderTarget(NULL);
-	//ITexture* rt = hkGetFullScreenTexture.fOriginal();
 	rndrContext->SetRenderTarget(m_VR->m_LeftEyeTexture);
 	rndrContext->Release();
 	hkRenderView.fOriginal(ecx, leftEyeView, hudViewSetup, nClearFlags, whatToDraw);
@@ -262,15 +235,7 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	rightEyeView.zNear = 6;
 	rightEyeView.zNearViewmodel = 6;
 	rightEyeView.origin = m_VR->GetViewOriginRight();
-	rightEyeView.angles = m_VR->GetViewAngle();
-
-	//std::cout << "CViewSetup (Edited): " << &leftEyeView << ", " << &rightEyeView << "\n";
-
-	/*hudViewSetup.width = m_VR->m_RenderWidth;
-	hudViewSetup.height = m_VR->m_RenderHeight;
-	hudViewSetup.m_flAspectRatio = m_VR->m_Aspect;
-	hudViewSetup.origin = m_VR->GetViewOriginRight();
-	hudViewSetup.angles = m_VR->GetViewAngle();*/
+	rightEyeView.angles = hmdAngle;
 
 	rndrContext = matSystem->GetRenderContext();
 	rndrContext->SetRenderTarget(m_VR->m_RightEyeTexture);
@@ -280,25 +245,6 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	rndrContext = matSystem->GetRenderContext();
 	rndrContext->SetRenderTarget(NULL);
 	rndrContext->Release();
-
-	/*int width, height;
-	rndrContext->GetRenderTargetDimensions(width, height);
-	std::cout << "RT - W: " << width << ", H: " << height << "\n";*/
-
-	//ITexture* rt = matSystem->FindTexture("_rt_Fullscreen", "RenderTargets"); // TEXTURE_GROUP_RENDER_TARGET //_rt_Fullscreen //_rt_FullFrameFB1
-
-	/*if (rt) {
-		int sWidth = rt->GetActualWidth();
-		int sHeight = rt->GetActualHeight();
-
-		std::cout << "IsRenderTarget: " << rt->IsRenderTarget() << ", W: " << sWidth << ", H: " << sHeight << "\n";
-	}*/
-
-	// Copy right eye content to presentation RT
-	/*rndrContext = matSystem->GetRenderContext();
-	rndrContext->SetRenderTarget(NULL);
-	rndrContext->CopyRenderTargetToTexture(m_VR->m_RightEyeTexture);
-	rndrContext->Release();*/
 
 	m_VR->m_RenderedNewFrame = true;
 }
@@ -751,35 +697,81 @@ float __fastcall Hooks::dTraceFirePortal(void* ecx, void* edx, const Vector& vTr
 
 	if (m_VR->m_IsVREnabled && iPlacedBy == 2)
 	{
-		vNewTraceStart = m_VR->m_RightControllerPosAbs;
+		vNewTraceStart = m_VR->GetRightControllerAbsPos();
 		vNewDirection = m_VR->m_RightControllerForward;
 	}
 
 	return hkTraceFirePortal.fOriginal(ecx, vNewTraceStart, vNewDirection, bPortal2, iPlacedBy, tr);
 }
 
-void __fastcall Hooks::dHandlePortallingClient(void* ecx, void* edx)
+void __fastcall Hooks::dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3)
 {
-	DWORD *cPortalPlayer = (DWORD*)*((DWORD*)ecx + 0x1);
-	CBaseEntity* pBaseEntity = (CBaseEntity*)cPortalPlayer;
+	CBaseEntity* pBaseEntity = (CBaseEntity*)ecx;
 
-	//Vector* eyeAnglesBefore = hkEyeAngles.fOriginal(pBaseEntity);
-	QAngle angAbsRotationBefore = pBaseEntity->m_angAbsRotation;
+	QAngle angAbsRotationBefore;
+	m_Game->m_EngineClient->GetViewAngles(angAbsRotationBefore);
 
-	hkHandlePortallingClient.fOriginal(ecx);
+	hkPlayerPortalled.fOriginal(ecx, a2, a3);
 
-	//Vector* eyeAnglesAfter = hkEyeAngles.fOriginal(pBaseEntity);
-	QAngle angAbsRotationAfter = pBaseEntity->m_angAbsRotation;
+	QAngle angAbsRotationAfter;
+	m_Game->m_EngineClient->GetViewAngles(angAbsRotationAfter);
 
 	if (angAbsRotationBefore.y != angAbsRotationAfter.y) {
-		float difference = angAbsRotationAfter.y - angAbsRotationBefore.y;
-		m_VR->m_RotationOffset += difference;
+		m_VR->m_PortalRotationOffset = angAbsRotationAfter - angAbsRotationBefore;
+		m_VR->m_ApplyPortalRotationOffset = true;
 	}
 
 	return;
 }
 
-Vector *__fastcall Hooks::dEyeAngles(void* ecx, void* edx)
+bool Hooks::ScreenTransform(const Vector& point, Vector* pScreen)
 {
-	return hkEyeAngles.fOriginal(ecx);
+	bool retval = hkClipTransform.fOriginal(point, pScreen);
+
+	pScreen->x = 0.5f * (pScreen->x + 1.0f) * m_VR->m_RenderWidth + 0;
+	pScreen->y = 0.5f * (pScreen->y + 1.0f) * m_VR->m_RenderHeight + 0;
+
+	return retval;
+}
+
+int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h, const void* clr, float flApparentZ) {
+	//std::cout << "dDrawSelf - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << ", Z: " << flApparentZ << "\n";
+
+	int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
+	C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
+
+	int newX = x;
+	int	newY = y;
+
+	float newZ = flApparentZ;
+
+	if (m_VR->m_IsVREnabled && localPlayer)
+	{
+		Vector screen = { 0, 0, 0 };
+		Vector traceEndPos = m_VR->Trace((uint32_t*)localPlayer);
+
+		Vector vec = traceEndPos - m_VR->GetRightControllerAbsPos();
+
+		/*newX = 1024;
+		newY = 512;*/
+
+		newZ = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+
+		/*ScreenTransform(traceEndPos, &screen);
+
+		newX = m_VR->m_RenderWidth / 2;
+		newY = m_VR->m_RenderHeight / 2;
+
+		newX += 0.5 * screen.x * m_VR->m_RenderWidth + 0.5;
+		newY += 0.5 * screen.y * m_VR->m_RenderHeight + 0.5;
+		newY = m_VR->m_RenderHeight - newY;*/
+	}
+
+	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, newZ);
+}
+
+
+bool Hooks::dClipTransform(const Vector& point, Vector* pScreen)
+{
+	return hkClipTransform.fOriginal(point, pScreen);
 }
