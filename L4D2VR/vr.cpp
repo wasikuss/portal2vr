@@ -629,6 +629,15 @@ void VR::ProcessInput()
         m_Game->ClientCmd_Unrestricted("-attack");
     }
 
+    if (PressedDigitalAction(m_ActionSecondaryAttack))
+    {
+        m_Game->ClientCmd_Unrestricted("+attack2");
+    }
+    else
+    {
+        m_Game->ClientCmd_Unrestricted("-attack2");
+    }
+
     if (PressedDigitalAction(m_ActionJump))
     {
         m_Game->ClientCmd_Unrestricted("+jump");
@@ -636,6 +645,15 @@ void VR::ProcessInput()
     else
     {
         m_Game->ClientCmd_Unrestricted("-jump");
+    }
+
+    if (PressedDigitalAction(m_ActionCrouch))
+    {
+        m_Game->ClientCmd_Unrestricted("+duck");
+    }
+    else
+    {
+        m_Game->ClientCmd_Unrestricted("-duck");
     }
 
     if (PressedDigitalAction(m_ActionUse))
@@ -656,15 +674,6 @@ void VR::ProcessInput()
         m_Game->ClientCmd_Unrestricted("-reload");
     }
 
-    if (PressedDigitalAction(m_ActionSecondaryAttack))
-    {
-        m_Game->ClientCmd_Unrestricted("+attack2");
-    }
-    else
-    {
-        m_Game->ClientCmd_Unrestricted("-attack2");
-    }
-
     if (PressedDigitalAction(m_ActionPrevItem, true))
     {
         m_Game->ClientCmd_Unrestricted("invprev");
@@ -679,15 +688,6 @@ void VR::ProcessInput()
         ResetPosition();
     }
 
-    if (PressedDigitalAction(m_ActionCrouch))
-    {
-        m_Game->ClientCmd_Unrestricted("+duck");
-    }
-    else
-    {
-        m_Game->ClientCmd_Unrestricted("-duck");
-    }
-
     if (PressedDigitalAction(m_ActionFlashlight, true))
     {
         m_Game->ClientCmd_Unrestricted("impulse 100");
@@ -698,7 +698,7 @@ void VR::ProcessInput()
         m_Game->ClientCmd_Unrestricted("impulse 201");
     }
     
-    bool isControllerVertical = m_RightControllerAngAbs.x > 60 || m_RightControllerAngAbs.x < -45;
+    /*bool isControllerVertical = m_RightControllerAngAbs.x > 60 || m_RightControllerAngAbs.x < -45;
     if ((PressedDigitalAction(m_ShowHUD) || PressedDigitalAction(m_Scoreboard) || isControllerVertical || m_HudAlwaysVisible)
         && m_RenderedHud)
     {
@@ -715,7 +715,7 @@ void VR::ProcessInput()
     else
     {
         vr::VROverlay()->HideOverlay(m_HUDHandle);
-    }
+    }*/
     m_RenderedHud = false;
 
     if (PressedDigitalAction(m_Pause, true))
@@ -832,14 +832,27 @@ QAngle VR::GetRightControllerAbsAngle()
     return m_RightControllerAngAbs;
 }
 
-Vector VR::GetRightControllerAbsPos()
+Vector VR::GetRightControllerAbsPos(Vector eyePosition)
 {
-    return m_RightControllerPosAbs;
+    Vector offset = eyePosition;
+
+    if (offset.x == 0 && offset.y == 0 && offset.z == 0) {
+        /*int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
+        C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
+        if (!localPlayer)
+            return {0, 0, 0};
+
+        offset = localPlayer->EyePosition();*/
+
+        offset = m_SetupOrigin;
+    }
+
+    return offset + m_HmdPosRelative + m_RightControllerPosRel;
 }
 
-Vector VR::GetRecommendedViewmodelAbsPos()
+Vector VR::GetRecommendedViewmodelAbsPos(Vector eyePosition)
 {
-    Vector viewmodelPos = GetRightControllerAbsPos();
+    Vector viewmodelPos = GetRightControllerAbsPos(eyePosition);
     viewmodelPos -= m_ViewmodelForward * m_ViewmodelPosOffset.x;
     viewmodelPos -= m_ViewmodelRight * m_ViewmodelPosOffset.y;
     viewmodelPos -= m_ViewmodelUp * m_ViewmodelPosOffset.z;
@@ -868,6 +881,11 @@ void VR::UpdateHMDAngles() {
     m_HmdAngAbs = hmdAngLocal;
 }
 
+void VR::ResetPosition()
+{
+    m_Center = m_HmdPose.TrackedDevicePos;
+}
+
 void VR::UpdateTracking()
 {
     GetPoses();
@@ -879,21 +897,21 @@ void VR::UpdateTracking()
 
     // HMD tracking
     Vector hmdPosLocal = m_HmdPose.TrackedDevicePos;
+    Vector hmdPosCentered = hmdPosLocal - m_Center;
 
-    Vector deltaPosition = hmdPosLocal - m_HmdPosLocalPrev;
-    Vector hmdPosCorrected = m_HmdPosCorrectedPrev + deltaPosition;
+    m_HmdPosRelativeRaw = hmdPosCentered;
 
-    VectorPivotXY(hmdPosCorrected, m_HmdPosCorrectedPrev, m_RotationOffset);
+    //std::cout << "HMD - X: " << hmdWorldPos.x << ", Y: " << hmdWorldPos.y << ", Z: " << hmdWorldPos.z << "\n";
 
-    m_HmdPosCorrectedPrev = hmdPosCorrected;
-    m_HmdPosLocalPrev = hmdPosLocal;
-
+    Vector hmdPosCorrected = hmdPosCentered;
+    VectorPivotXY(hmdPosCorrected, { 0, 0, 0 }, m_RotationOffset);
+    
     UpdateHMDAngles();
 
-    m_HmdPosLocalInWorld = hmdPosCorrected * m_VRScale;
+    m_HmdPosRelative = hmdPosCorrected * m_VRScale;
 
     // Roomscale setup
-    Vector cameraMovingDirection = m_SetupOrigin - m_SetupOriginPrev;
+    /*Vector cameraMovingDirection = m_Center - m_SetupOriginPrev;
     Vector cameraToPlayer = m_HmdPosAbsPrev - m_SetupOriginPrev;
     cameraMovingDirection.z = 0;
     cameraToPlayer.z = 0;
@@ -905,17 +923,12 @@ void VR::UpdateTracking()
 
     // TODO: Get roomscale to work while using thumbstick
     if ((cameraFollowing < 0 && cameraDistance > 1) || (m_PushingThumbstick))
-        m_RoomscaleActive = false;
+        m_RoomscaleActive = false;*/
 
-    if (!m_RoomscaleActive)
-        m_CameraAnchor += m_SetupOrigin - m_SetupOriginPrev;
-
-    m_CameraAnchor.z = m_SetupOrigin.z + m_HeightOffset;
-
-    m_HmdPosAbs = m_CameraAnchor - Vector(0, 0, 64) + m_HmdPosLocalInWorld;
+    m_AimPos = Trace((uint32_t*)localPlayer);
 
     // Check if camera is clipping inside wall
-    CGameTrace trace;
+    /*CGameTrace trace;
     Ray_t ray;
     CTraceFilterSkipNPCsAndPlayers tracefilter((IHandleEntity*)localPlayer, 0);
 
@@ -938,7 +951,7 @@ void VR::UpdateTracking()
         ResetPosition();
 
     m_HmdPosAbsPrev = m_HmdPosAbs;
-    m_SetupOriginPrev = m_SetupOrigin;
+    m_SetupOriginPrev = m_SetupOrigin;*/
 
     GetViewParameters();
     m_Ipd = m_EyeToHeadTransformPosRight.x * 2;
@@ -951,15 +964,15 @@ void VR::UpdateTracking()
     Vector rightControllerPosLocal = m_RightControllerPose.TrackedDevicePos;
     QAngle rightControllerAngLocal = m_RightControllerPose.TrackedDeviceAng;
 
+    //std::cout << "Right Controller - X: " << rightControllerPosLocal.x << "Y: " << rightControllerPosLocal.y << "Z: " << rightControllerPosLocal.z << "\n";
+
     Vector hmdToController = rightControllerPosLocal - hmdPosLocal;
-    Vector rightControllerPosCorrected = hmdPosCorrected + hmdToController;
+    //Vector rightControllerPosCorrected = hmdPosCorrected + hmdToController;
 
     // When using stick turning, pivot the controllers around the HMD
-    VectorPivotXY(rightControllerPosCorrected, hmdPosCorrected, m_RotationOffset);
+    VectorPivotXY(hmdToController, { 0, 0, 0 }, m_RotationOffset);
 
-    Vector rightControllerPosLocalInWorld = rightControllerPosCorrected * m_VRScale;
-
-    m_RightControllerPosAbs = m_CameraAnchor - Vector(0, 0, 64) + rightControllerPosLocalInWorld;
+    m_RightControllerPosRel = hmdToController * m_VRScale;
 
     rightControllerAngLocal.y += m_RotationOffset;
     // Wrap angle from -180 to 180
@@ -1008,17 +1021,18 @@ Vector VR::GetViewAngle()
     return Vector( m_HmdAngAbs.x, m_HmdAngAbs.y, m_HmdAngAbs.z );
 }
 
-Vector VR::GetViewOriginLeft()
+
+Vector VR::GetViewOriginLeft(Vector setupOrigin)
 {
-    Vector viewOriginLeft = m_HmdPosAbs + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
+    Vector viewOriginLeft = setupOrigin + m_HmdPosRelative + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
     viewOriginLeft -= m_HmdRight * ((m_Ipd * m_IpdScale * m_VRScale) / 2);
 
     return viewOriginLeft;
 }
 
-Vector VR::GetViewOriginRight()
+Vector VR::GetViewOriginRight(Vector setupOrigin)
 {
-    Vector viewOriginRight = m_HmdPosAbs + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
+    Vector viewOriginRight = setupOrigin + m_HmdPosRelative + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
     viewOriginRight += m_HmdRight * ((m_Ipd * m_IpdScale * m_VRScale) / 2);
 
     return viewOriginRight;
@@ -1037,12 +1051,6 @@ Vector VR::Trace(uint32_t* localPlayer) {
     m_Game->m_EngineTrace->TraceRay(ray, MASK_SHOT, &tracefilter, &trace);
 
     return trace.endpos;
-}
-
-void VR::ResetPosition()
-{
-    m_CameraAnchor += m_SetupOrigin - m_HmdPosAbs;
-    m_HeightOffset += m_SetupOrigin.z - m_HmdPosAbs.z;
 }
 
 void VR::ParseConfigFile()

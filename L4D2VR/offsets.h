@@ -41,8 +41,7 @@ public:
     Offset RenderView =                  { "client.dll", 0x1F2120, "55 8B EC 83 EC 2C 53 56 8B F1 6A 00 8D 8E ? ? ? ? E8 ? ? ? ?" };
     Offset g_pClientMode =               { "client.dll", 0x2580D0, "8B 0D ? ? ? ? 8B 01 8B 90 ? ? ? ? FF D2 8B 04 85 ? ? ? ? C3", 2 };
     Offset CalcViewModelView =           { "client.dll", 0x27D750, "55 8B EC 83 EC 34 53 8B D9 80 BB" };
-    Offset CreateMove = { "client.dll", 0xD2B60, "55 8B EC 51 56 6A 00 6A 01 8D 4D FF E8 ? ? ? ? " };
-    //55 8B EC 51 56 6A 00 6A 01 8D 4D FF E8 ? ? ? ? 
+    Offset CreateMove =                  { "client.dll", 0x27A440, "55 8B EC A1 ? ? ? ? 83 EC 0C 83 78 30 00 56 8B 75 0C 57 8B F9 74 43" };
 
     //Offset WriteUsercmdDeltaToBuffer =   { "client.dll", 0x134790, "55 8B EC 83 EC 60 0F 57 C0 8B 55 0C" }; //
     Offset WriteUsercmd =                { "client.dll", 0x1C2060, "55 8B EC A1 ? ? ? ? 83 78 30 00 53 8B 5D 0C 56 57" };
@@ -75,4 +74,12 @@ public:
     Offset ClipTransform = { "client.dll", 0x1DD130, "55 8B EC 8B 0D ? ? ? ? 8B 01 8B 90 ? ? ? ? FF D2 8B 4D" };
 
     Offset PlayerPortalled = { "client.dll", 0x27C9D0, "55 8B EC 83 EC 78 53 56 8B D9 8B 0D ? ? ? ? 8B 01 8B 90 ? ? ? ? 57 33 FF 57 FF D2" };
+
+    Offset VGui_GetHudBounds = { "client.dll", 0x1CC550, "55 8B EC 51 56 8B 75 08 8B CE" };
+
+    Offset SetBounds = { "engine.dll", 0x2986A0, "55 8B EC 8B 55 0C 53 56 8B F1 8B 46 04 8B 48 04 8B 45 08 57 8B 3D ? ? ? ? 8B 1F 8D 4C 31 04 52 8B 11 50 8B 02 FF D0 8B 53 08 50 8B CF FF D2 " };
+
+    Offset Push2DView = { "engine.dll", 0xDF980, "55 8B EC 51 53 8B D9 8B 83 ? ? ? ? 56 8D B3 ? ? ? ? 57 89 5D FC 3B 46 04 7C 09" };
+
+    Offset Render = { "client.dll", 0x1D6800, "55 8B EC 81 EC ? ? ? ? 53 56 57 8B F9 8B 0D ? ? ? ? 89 7D F4 FF 15 ? ? ? ?" };
 };

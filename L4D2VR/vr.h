@@ -73,24 +73,26 @@ public:
 	Vector m_ViewmodelRight;
 	Vector m_ViewmodelUp;
 
-	Vector m_HmdPosAbs = { 0,0,0 };
-	Vector m_HmdPosAbsPrev = { 0,0,0 };
 	QAngle m_HmdAngAbs;
 
-	Vector m_HmdPosCorrectedPrev = { 0,0,0 };
-	Vector m_HmdPosLocalPrev = { 0,0,0 };
+	Vector m_HmdPosRelativeRaw = { 0,0,0 };
+	Vector m_HmdPosRelativeRawPrev = { 0,0,0 };
 
+	Vector m_HmdPosRelative = { 0,0,0 };
+	Vector m_HmdPosRelativePrev = { 0,0,0 };
+
+	Vector m_AimPos = { 0, 0, 0 };
+	bool m_Traced = false;
+
+	Vector m_Center = { 0,0,0 };
 	Vector m_SetupOrigin = { 0,0,0 };
-	Vector m_SetupOriginPrev = { 0,0,0 };
-	Vector m_CameraAnchor = { 0,0,0 };
-	Vector m_SetupOriginToHMD = { 0,0,0 };
 
 	float m_HeightOffset = 0.0;
 	bool m_RoomscaleActive = false;
 
 	Vector m_LeftControllerPosAbs;											
 	QAngle m_LeftControllerAngAbs;
-	Vector m_RightControllerPosAbs;											
+	Vector m_RightControllerPosRel;											
 	QAngle m_RightControllerAngAbs;
 
 	Vector m_ViewmodelPosOffset;
@@ -203,14 +205,14 @@ public:
 	vr::HmdMatrix34_t GetControllerTipMatrix(vr::ETrackedControllerRole controllerRole);
 	bool CheckOverlayIntersectionForController(vr::VROverlayHandle_t overlayHandle, vr::ETrackedControllerRole controllerRole);
 	QAngle GetRightControllerAbsAngle();
-	Vector GetRightControllerAbsPos();
-	Vector GetRecommendedViewmodelAbsPos();
+	Vector GetRightControllerAbsPos(Vector eyePosition = {0, 0, 0});
+	Vector GetRecommendedViewmodelAbsPos(Vector eyePosition);
 	QAngle GetRecommendedViewmodelAbsAngle();
 	void UpdateHMDAngles();
 	void UpdateTracking();
 	Vector GetViewAngle();
-	Vector GetViewOriginLeft();
-	Vector GetViewOriginRight();
+	Vector GetViewOriginLeft(Vector setupOrigin);
+	Vector GetViewOriginRight(Vector setupOrigin);
 	bool PressedDigitalAction(vr::VRActionHandle_t &actionHandle, bool checkIfActionChanged = false);
 	bool GetAnalogActionData(vr::VRActionHandle_t &actionHandle, vr::InputAnalogActionData_t &analogDataOut);
 	void ResetPosition();

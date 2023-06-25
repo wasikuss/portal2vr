@@ -35,7 +35,7 @@ Hooks::Hooks(Game *game)
 	hkViewport.enableHook();
 	hkGetViewport.enableHook();
 
-	//hkCreateMove.enableHook();
+	hkCreateMove.enableHook();
 	//hkItemPostFrameServer.enableHook();
 
 	hkEyePosition.enableHook();
@@ -53,6 +53,10 @@ Hooks::Hooks(Game *game)
 	hkTraceFirePortal.enableHook();
 	hkDrawSelf.enableHook();
 	hkPlayerPortalled.enableHook();
+	hkVGui_GetHudBounds.enableHook();
+	hkSetBounds.enableHook();
+	hkPush2DView.enableHook();
+	hkRender.enableHook();
 }
 
 Hooks::~Hooks()
@@ -148,6 +152,17 @@ int Hooks::initSourceHooks()
 	LPVOID CreateMoveAddr = (LPVOID)(m_Game->m_Offsets->CreateMove.address);
 	hkCreateMove.createHook(CreateMoveAddr, &dCreateMove);
 	
+	LPVOID VGui_GetHudBoundsAddr = (LPVOID)(m_Game->m_Offsets->VGui_GetHudBounds.address);
+	hkVGui_GetHudBounds.createHook(VGui_GetHudBoundsAddr, &dVGui_GetHudBounds);
+
+	LPVOID SetBoundsAddr = (LPVOID)(m_Game->m_Offsets->SetBounds.address);
+	hkSetBounds.createHook(SetBoundsAddr, &dSetBounds);
+	
+	LPVOID Push2DViewAddr = (LPVOID)(m_Game->m_Offsets->Push2DView.address);
+	hkPush2DView.createHook(Push2DViewAddr, &dPush2DView);
+
+	LPVOID RenderAddr = (LPVOID)(m_Game->m_Offsets->Render.address);
+	hkRender.createHook(RenderAddr, &dRender);
 
 	return 1;
 }
@@ -178,11 +193,17 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	CViewSetup leftEyeView = setup;
 	CViewSetup rightEyeView = setup;
 
+	int windowWidth, windowHeight;
+	m_Game->m_MaterialSystem->GetRenderContext()->GetWindowSize(windowWidth, windowHeight);
+
+	/*hudViewSetup.x = m_VR->m_RenderWidth - windowWidth;
+	hudViewSetup.y = m_VR->m_RenderHeight - windowHeight;*/
+
 	hudViewSetup.width = m_VR->m_RenderWidth;
 	hudViewSetup.height = m_VR->m_RenderHeight;
 	hudViewSetup.m_flAspectRatio = m_VR->m_Aspect;
-	/*hudViewSetup.origin = m_VR->GetViewOriginLeft();
-	hudViewSetup.angles = m_VR->GetViewAngle();*/
+	//hudViewSetup.origin = m_VR->GetViewOriginLeft();
+	hudViewSetup.angles = m_VR->GetViewAngle();
 
 	Vector position = setup.origin;
 
@@ -201,11 +222,11 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 		}
 	}
 
+	m_VR->m_SetupOrigin = position;
+
 	Vector hmdAngle = m_VR->GetViewAngle();
 	QAngle inGameAngle(hmdAngle.x, hmdAngle.y, hmdAngle.z);
 	m_Game->m_EngineClient->SetViewAngles(inGameAngle);
-
-	m_VR->m_SetupOrigin = position;
 
 	// Left eye CViewSetup
 	leftEyeView.x = 0;
@@ -216,14 +237,16 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	leftEyeView.m_flAspectRatio = m_VR->m_Aspect;
 	leftEyeView.zNear = 6;
 	leftEyeView.zNearViewmodel = 6;
-	leftEyeView.origin = m_VR->GetViewOriginLeft();
+	leftEyeView.origin = m_VR->GetViewOriginLeft(position);
 	leftEyeView.angles = hmdAngle;
 
+	//std::cout << "dRenderView - Left Start\n";
 	IMatRenderContext* rndrContext = matSystem->GetRenderContext();
 	rndrContext->SetRenderTarget(m_VR->m_LeftEyeTexture);
 	rndrContext->Release();
 	hkRenderView.fOriginal(ecx, leftEyeView, hudViewSetup, nClearFlags, whatToDraw);
 	m_PushedHud = false;
+	//std::cout << "dRenderView - Left End\n";
 
 	// Right eye CViewSetup
 	rightEyeView.x = 0;
@@ -234,13 +257,15 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	rightEyeView.m_flAspectRatio = m_VR->m_Aspect;
 	rightEyeView.zNear = 6;
 	rightEyeView.zNearViewmodel = 6;
-	rightEyeView.origin = m_VR->GetViewOriginRight();
+	rightEyeView.origin = m_VR->GetViewOriginRight(position);
 	rightEyeView.angles = hmdAngle;
 
+	//std::cout << "dRenderView - Right Start\n";
 	rndrContext = matSystem->GetRenderContext();
 	rndrContext->SetRenderTarget(m_VR->m_RightEyeTexture);
 	rndrContext->Release();
 	hkRenderView.fOriginal(ecx, rightEyeView, hudViewSetup, nClearFlags, whatToDraw);
+	//std::cout << "dRenderView - Right End\n";
 
 	rndrContext = matSystem->GetRenderContext();
 	rndrContext->SetRenderTarget(NULL);
@@ -254,17 +279,29 @@ bool __fastcall Hooks::dCreateMove(void *ecx, void *edx, float flInputSampleTime
 	if (!cmd->command_number)
 		return hkCreateMove.fOriginal(ecx, flInputSampleTime, cmd);
 
-	if (m_VR->m_IsVREnabled && m_VR->m_RoomscaleActive)
+	if (m_VR->m_IsVREnabled  && m_VR->m_RoomscaleActive)
 	{
-		Vector setupOriginToHMD = m_VR->m_SetupOriginToHMD;
+		// How much have we moved since last CreateMove?
+		Vector setupOriginToHMD = (m_VR->m_HmdPosRelativeRaw - m_VR->m_HmdPosRelativeRawPrev) * m_VR->m_VRScale; //m_VR->m_HmdPosRelative - m_VR->m_HmdPosRelativePrev;
+		m_VR->m_HmdPosRelativeRawPrev = m_VR->m_HmdPosRelativeRaw;
+
 		setupOriginToHMD.z = 0;
 		float distance = VectorLength(setupOriginToHMD);
-		if (distance > 1)
+		if (distance > 0)
 		{
 			float forwardSpeed = DotProduct2D(setupOriginToHMD, m_VR->m_HmdForward);
 			float sideSpeed = DotProduct2D(setupOriginToHMD, m_VR->m_HmdRight);
 			cmd->forwardmove += distance * forwardSpeed;
 			cmd->sidemove += distance * sideSpeed;
+
+			// Let's update the position and the previous too
+			/*m_VR->m_HmdPosRelative -= setupOriginToHMD;
+			m_VR->m_HmdPosRelativePrev = m_VR->m_HmdPosRelative;*/
+
+			/*m_VR->m_Center += m_VR->m_HmdPosRelativeRaw - m_VR->m_HmdPosRelativeRawPrev;
+			m_VR->m_HmdPosRelativeRawPrev = m_VR->m_HmdPosRelativeRaw;*/
+
+			//m_VR->ResetPosition();
 		}
 	}
 
@@ -285,48 +322,12 @@ void __fastcall Hooks::dCalcViewModelView(void *ecx, void *edx, const Vector &ey
 
 	if (m_VR->m_IsVREnabled)
 	{
-		vecNewOrigin = m_VR->GetRecommendedViewmodelAbsPos();
+		vecNewOrigin = m_VR->GetRecommendedViewmodelAbsPos(eyePosition);
 		vecNewAngles = m_VR->GetRecommendedViewmodelAbsAngle();
 	}
 
 	return hkCalcViewModelView.fOriginal(ecx, vecNewOrigin, vecNewAngles);
 }
-
-int Hooks::dServerFireTerrorBullets(int playerId, const Vector &vecOrigin, const QAngle &vecAngles, int a4, int a5, int a6, float a7)
-{
-	Vector vecNewOrigin = vecOrigin;
-	QAngle vecNewAngles = vecAngles;
-
-	// Server host
-	if (m_VR->m_IsVREnabled && playerId == m_Game->m_EngineClient->GetLocalPlayer())
-	{
-		vecNewOrigin = m_VR->GetRightControllerAbsPos();
-		vecNewAngles = m_VR->GetRightControllerAbsAngle();
-	}
-	// Clients
-	else if (m_Game->m_PlayersVRInfo[playerId].isUsingVR)
-	{
-		vecNewOrigin = m_Game->m_PlayersVRInfo[playerId].controllerPos;
-		vecNewAngles = m_Game->m_PlayersVRInfo[playerId].controllerAngle;
-	}
-
-	return hkServerFireTerrorBullets.fOriginal(playerId, vecNewOrigin, vecNewAngles, a4, a5, a6, a7);
-}
-
-int Hooks::dClientFireTerrorBullets(int playerId, const Vector &vecOrigin, const QAngle &vecAngles, int a4, int a5, int a6, float a7)
-{
-	Vector vecNewOrigin = vecOrigin;
-	QAngle vecNewAngles = vecAngles;
-	
-	if (m_VR->m_IsVREnabled && playerId == m_Game->m_EngineClient->GetLocalPlayer())
-	{
-		vecNewOrigin = m_VR->GetRightControllerAbsPos();
-		vecNewAngles = m_VR->GetRightControllerAbsAngle();
-	}
-
-	return hkClientFireTerrorBullets.fOriginal(playerId, vecNewOrigin, vecNewAngles, a4, a5, a6, a7);
-}
-
 
 float __fastcall Hooks::dProcessUsercmds(void *ecx, void *edx, edict_t *player, void *buf, int numcmds, int totalcmds, int dropped_packets, bool ignore, bool paused)
 {
@@ -521,22 +522,25 @@ void Hooks::dAdjustEngineViewport(int &x, int &y, int &width, int &height)
 
 void Hooks::dViewport(void *ecx, void *edx, int x, int y, int width, int height)
 {
+	//std::cout << "dViewport - X: " << x << ", Y: " << y << ", W: " << width << ", H: " << height << "\n";
+	
+
+	if (m_VR->m_IsVREnabled && m_Game->m_EngineClient->IsInGame() && !m_Game->m_VguiSurface->IsCursorVisible())
+	{
+		int windowWidth, windowHeight;
+		m_Game->m_MaterialSystem->GetRenderContext()->GetWindowSize(windowWidth, windowHeight);
+
+		if (width == windowWidth && height == windowHeight) {
+			return hkViewport.fOriginal(ecx, x, y, m_VR->m_RenderWidth, m_VR->m_RenderHeight);
+		}
+	}
+
 	hkViewport.fOriginal(ecx, x, y, width, height);
 }
 
 void Hooks::dGetViewport(void *ecx, void *edx, int &x, int &y, int &width, int &height)
 {
 	hkGetViewport.fOriginal(ecx, x, y, width, height);
-}
-
-int Hooks::dPrimaryAttackServer(void *ecx, void *edx)
-{
-	return hkPrimaryAttackServer.fOriginal(ecx);
-}
-
-void Hooks::dItemPostFrameServer(void *ecx, void *edx)
-{
-	hkItemPostFrameServer.fOriginal(ecx);
 }
 
 int Hooks::dGetPrimaryAttackActivity(void *ecx, void *edx, void *meleeInfo)
@@ -604,7 +608,7 @@ void Hooks::dPushRenderTargetAndViewport(void *ecx, void *edx, ITexture *pTextur
 	if (!m_VR->m_CreatedVRTextures)
 		return hkPushRenderTargetAndViewport.fOriginal(ecx, pTexture, pDepthTexture, nViewX, nViewY, nViewW, nViewH);
 
-	//std::cout << "dPushRenderTargetAndViewport: " << m_PushHUDStep << "\n";
+	//std::cout << "dPushRenderTargetAndViewport: W: " << pTexture->GetActualWidth() << ", H: " << pTexture->GetActualHeight() << ", VW: " << nViewW << ", VH: " << nViewH << "\n";
 
 	if (m_PushHUDStep == 2)
 		++m_PushHUDStep;
@@ -614,7 +618,7 @@ void Hooks::dPushRenderTargetAndViewport(void *ecx, void *edx, ITexture *pTextur
 	// RenderView calls PushRenderTargetAndViewport multiple times with different textures. 
 	// When the call order goes PopRenderTargetAndViewport -> IsSplitScreen -> PrePushRenderTarget -> PushRenderTargetAndViewport,
 	// then it pushed the HUD/GUI render target to the RT stack.
-	if (m_PushHUDStep == 3)
+	if (!pTexture || (pTexture->GetActualWidth() != m_VR->m_RenderWidth && pTexture->GetActualHeight() != m_VR->m_RenderHeight))
 	{
 		pTexture = m_VR->m_HUDTexture;
 
@@ -658,6 +662,8 @@ void Hooks::dVGui_Paint(void *ecx, void *edx, int mode)
 {
 	if (!m_VR->m_CreatedVRTextures || m_VR->m_Game->m_VguiSurface->IsCursorVisible())
 		return hkVgui_Paint.fOriginal(ecx, mode);
+
+	std::cout << "dVGui_Paint\n";
 
 	if (m_PushedHud)
 		mode = PAINT_UIPANELS | PAINT_INGAMEPANELS;
@@ -724,12 +730,17 @@ void __fastcall Hooks::dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 
 	return;
 }
 
+bool Hooks::dClipTransform(const Vector& point, Vector* pScreen)
+{
+	return hkClipTransform.fOriginal(point, pScreen);
+}
+
 bool Hooks::ScreenTransform(const Vector& point, Vector* pScreen)
 {
 	bool retval = hkClipTransform.fOriginal(point, pScreen);
 
-	pScreen->x = 0.5f * (pScreen->x + 1.0f) * m_VR->m_RenderWidth + 0;
-	pScreen->y = 0.5f * (pScreen->y + 1.0f) * m_VR->m_RenderHeight + 0;
+	pScreen->x = 0.5f * (pScreen->x + 1.0f) * m_VR->m_RenderWidth;
+	pScreen->y = 0.5f * (-pScreen->y + 1.0f) * m_VR->m_RenderHeight;
 
 	return retval;
 }
@@ -738,40 +749,73 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 	//std::cout << "dDrawSelf - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << ", Z: " << flApparentZ << "\n";
 
 	int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
-	C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
 
 	int newX = x;
 	int	newY = y;
 
-	float newZ = flApparentZ;
 
-	if (m_VR->m_IsVREnabled && localPlayer)
+	if (m_VR->m_IsVREnabled)
 	{
+		int windowWidth, windowHeight;
+		m_Game->m_MaterialSystem->GetRenderContext()->GetWindowSize(windowWidth, windowHeight);
+
 		Vector screen = { 0, 0, 0 };
-		Vector traceEndPos = m_VR->Trace((uint32_t*)localPlayer);
 
-		Vector vec = traceEndPos - m_VR->GetRightControllerAbsPos();
+		/*Vector vec = m_VR->m_AimPos - m_VR->GetRightControllerAbsPos();
 
-		/*newX = 1024;
-		newY = 512;*/
+		newZ = 1.0 / sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);*/
 
-		newZ = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+		ScreenTransform(m_VR->m_AimPos, &screen);
 
-		/*ScreenTransform(traceEndPos, &screen);
+		int offsetX = x - (windowWidth * 0.5f);
+		int offsetY = y - (windowHeight * 0.5f);
 
-		newX = m_VR->m_RenderWidth / 2;
-		newY = m_VR->m_RenderHeight / 2;
-
-		newX += 0.5 * screen.x * m_VR->m_RenderWidth + 0.5;
-		newY += 0.5 * screen.y * m_VR->m_RenderHeight + 0.5;
-		newY = m_VR->m_RenderHeight - newY;*/
+		newX = screen.x + offsetX;
+		newY = screen.y + offsetY;
 	}
 
-	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, newZ);
+	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, flApparentZ);
 }
 
+void __cdecl Hooks::dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h) {
+	if (m_VR->m_IsVREnabled && !m_Game->m_VguiSurface->IsCursorVisible())
+	{
+		x = y = 0;
+		w = m_VR->m_RenderWidth;
+		h = m_VR->m_RenderHeight;
+	} else {
+		hkVGui_GetHudBounds.fOriginal(slot, x, y, w, h);
+	}
 
-bool Hooks::dClipTransform(const Vector& point, Vector* pScreen)
-{
-	return hkClipTransform.fOriginal(point, pScreen);
+	//std::cout << "dVGui_GetHudBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h  << "\n";
+}
+
+void __fastcall Hooks::dPush2DView(void* ecx, void* edx, IMatRenderContext* pRenderContext, const CViewSetup& view, int nFlags, ITexture* pRenderTarget, void* frustumPlanes) {
+	std::cout << "dPush2DView\n";
+
+	if (pRenderTarget) {
+		std::cout << "pRenderTarget - W: " << pRenderTarget->GetActualWidth() << ", H: " << pRenderTarget->GetActualHeight() << "\n"; // Left and Right eye rendering from CViewRender::RenderView
+	} else {
+		ITexture* pTempRenderTarget = pRenderContext->GetRenderTarget();
+
+		if (pTempRenderTarget)
+			std::cout << "GetRenderTarget - W: " << pTempRenderTarget->GetActualWidth() << ", H: " << pTempRenderTarget->GetActualHeight() << "\n";
+		else {
+			std::cout << "No RT\n";	// void CViewRender::Render( vrect_t *rect )
+		}
+	}
+
+	return hkPush2DView.fOriginal(ecx, pRenderContext, view, nFlags, pRenderTarget, frustumPlanes);
+}
+
+void __fastcall Hooks::dRender(void* ecx, void* edx, vrect_t* rect) {
+	std::cout << "dRender - X: " << rect->x << ", Y: " << rect->y << ", W: " << rect->width << ", H: " << rect->height  << "\n";
+
+	return hkRender.fOriginal(ecx, rect);
+}
+
+void __fastcall Hooks::dSetBounds(void* ecx, void* edx, int x, int y, int w, int h) {
+	hkSetBounds.fOriginal(ecx, x, y, m_VR->m_RenderWidth, m_VR->m_RenderHeight);
+
+	//std::cout << "dSetBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h  << "\n";
 }
