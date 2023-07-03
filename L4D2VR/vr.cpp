@@ -540,12 +540,12 @@ void VR::ProcessInput()
         {
             if (!m_PressedTurn && analogActionData.x > 0.5)
             {
-                m_RotationOffset -= m_SnapTurnAngle;
+                m_RotationOffset.y -= m_SnapTurnAngle;
                 m_PressedTurn = true;
             }
             else if (!m_PressedTurn && analogActionData.x < -0.5)
             {
-                m_RotationOffset += m_SnapTurnAngle;
+                m_RotationOffset.y += m_SnapTurnAngle;
                 m_PressedTurn = true;
             }
             else if (analogActionData.x < 0.3 && analogActionData.x > -0.3)
@@ -559,16 +559,16 @@ void VR::ProcessInput()
             float xNormalized = (abs(analogActionData.x) - deadzone) / (1 - deadzone);
             if (analogActionData.x > deadzone)
             {
-                m_RotationOffset -= m_TurnSpeed * deltaTime * xNormalized;
+                m_RotationOffset.y -= m_TurnSpeed * deltaTime * xNormalized;
             }
             if (analogActionData.x < -deadzone)
             {
-                m_RotationOffset += m_TurnSpeed * deltaTime * xNormalized;
+                m_RotationOffset.y += m_TurnSpeed * deltaTime * xNormalized;
             }
         }
 
         // Wrap from 0 to 360
-        m_RotationOffset -= 360 * std::floor(m_RotationOffset / 360);
+        m_RotationOffset.y -= 360 * std::floor(m_RotationOffset.y / 360);
     }
 
     // TODO: Instead of ClientCmding, override Usercmd in CreateMove
@@ -872,9 +872,8 @@ QAngle VR::GetRecommendedViewmodelAbsAngle()
 void VR::UpdateHMDAngles() {
     QAngle hmdAngLocal = m_HmdPose.TrackedDeviceAng;
 
-    hmdAngLocal.y += m_RotationOffset;
-    // Wrap angle from -180 to 180
-    hmdAngLocal.y -= 360 * std::floor((hmdAngLocal.y + 180) / 360);
+    hmdAngLocal += m_RotationOffset;
+    hmdAngLocal.Normalize();
 
     QAngle::AngleVectors(hmdAngLocal, &m_HmdForward, &m_HmdRight, &m_HmdUp);
 
@@ -904,7 +903,7 @@ void VR::UpdateTracking()
     //std::cout << "HMD - X: " << hmdWorldPos.x << ", Y: " << hmdWorldPos.y << ", Z: " << hmdWorldPos.z << "\n";
 
     Vector hmdPosCorrected = hmdPosCentered;
-    VectorPivotXY(hmdPosCorrected, { 0, 0, 0 }, m_RotationOffset);
+    VectorPivotXY(hmdPosCorrected, { 0, 0, 0 }, m_RotationOffset.y);
     
     UpdateHMDAngles();
 
@@ -970,13 +969,13 @@ void VR::UpdateTracking()
     //Vector rightControllerPosCorrected = hmdPosCorrected + hmdToController;
 
     // When using stick turning, pivot the controllers around the HMD
-    VectorPivotXY(hmdToController, { 0, 0, 0 }, m_RotationOffset);
+    VectorPivotXY(hmdToController, { 0, 0, 0 }, m_RotationOffset.y);
 
     m_RightControllerPosRel = hmdToController * m_VRScale;
 
-    rightControllerAngLocal.y += m_RotationOffset;
+    rightControllerAngLocal += m_RotationOffset;
     // Wrap angle from -180 to 180
-    rightControllerAngLocal.y -= 360 * std::floor((rightControllerAngLocal.y + 180) / 360);
+    rightControllerAngLocal.Normalize();
 
     QAngle::AngleVectors(leftControllerAngLocal, &m_LeftControllerForward, &m_LeftControllerRight, &m_LeftControllerUp);
     QAngle::AngleVectors(rightControllerAngLocal, &m_RightControllerForward, &m_RightControllerRight, &m_RightControllerUp);

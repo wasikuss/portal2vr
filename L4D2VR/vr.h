@@ -173,7 +173,8 @@ public:
 
 	bool m_ApplyPortalRotationOffset = false;
 	QAngle m_PortalRotationOffset = {0, 0, 0};
-	float m_RotationOffset = 0;
+	QAngle m_RotationOffset = { 0, 0, 0 };
+	bool m_OverrideEyeAngles = false;
 	std::chrono::steady_clock::time_point m_PrevFrameTime;
 
 	float m_TurnSpeed = 0.3;

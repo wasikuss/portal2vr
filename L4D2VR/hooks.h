@@ -80,15 +80,23 @@ typedef void(__thiscall *tVgui_Paint)(void *thisptr, int mode);
 typedef int(__cdecl *tIsSplitScreen)();
 typedef DWORD *(__thiscall *tPrePushRenderTarget)(void *thisptr, int a2);
 typedef ITexture* (__thiscall* tGetFullScreenTexture)();
-typedef Vector* (__thiscall* tWeapon_ShootPosition)(void* thisptr, Vector* shootPos);
-typedef float(__thiscall* tTraceFirePortal)(void* thisptr, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
+
+typedef bool(__thiscall* tTraceFirePortal)(void* thisptr, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
+
+typedef void(__thiscall* tPlayerPortalled)(void* thisptr, void* a2, __int64 a3);
+
 typedef int(__thiscall* tDrawSelf)(void* thisptr, int x, int y, int w, int h, const void* clr, float flApparentZ);
 typedef bool(__cdecl* tClipTransform)(const Vector& point, Vector* pClip);
-typedef void(__thiscall* tPlayerPortalled)(void* thisptr, void* a2, __int64 a3);
 typedef void(__cdecl* tVGui_GetHudBounds)(int slot, int& x, int& y, int& w, int& h);
 typedef void(__thiscall* tSetBounds)(void* thisptr, int x, int y, int w, int h);
 typedef void(__thiscall* tPush2DView)(void* thisptr, IMatRenderContext* pRenderContext, const CViewSetup& view, int nFlags, ITexture* pRenderTarget, void* frustumPlanes);
 typedef void(__thiscall* tRender)(void* thisptr, vrect_t* rect);
+
+typedef Vector* (__thiscall* tWeapon_ShootPosition)(void* thisptr, Vector* shootPos);
+typedef float(__thiscall* tComputeError)(void* thisptr);
+typedef bool(__thiscall* tUpdateObject)(void* thisptr, void* pPlayer, float flError, bool bIsTeleport);
+typedef void(__thiscall* tRotateObject)(void* thisptr, void* pPlayer, float fRotAboutUp, float fRotAboutRight, bool bUseWorldUpInsteadOfPlayerUp);
+typedef QAngle*(__thiscall* tEyeAngles)(void* thisptr);
 
 class Hooks
 {
@@ -127,6 +135,11 @@ public:
 	static inline Hook<tPush2DView> hkPush2DView;
 	static inline Hook<tRender> hkRender;
 
+	static inline Hook<tComputeError> hkComputeError;
+	static inline Hook<tUpdateObject> hkUpdateObject;
+	static inline Hook<tRotateObject> hkRotateObject;
+	static inline Hook<tEyeAngles> hkEyeAngles;
+
 	Hooks() {};
 	Hooks(Game *game);
 
@@ -164,19 +177,29 @@ public:
 	static int __fastcall dIsSplitScreen();
 	static DWORD *__fastcall dPrePushRenderTarget(void *ecx, void *edx, int a2);
 	static ITexture *__fastcall dGetFullScreenTexture();
-	static Vector* __fastcall dWeapon_ShootPosition(void* ecx, void* edx, Vector* shootPos);
-	static float __fastcall dTraceFirePortal(void* ecx, void* edx, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
+
+	// Fire portals from right controller
+	static bool __fastcall dTraceFirePortal(void* ecx, void* edx, const Vector& vTraceStart, const Vector& vDirection, bool bPortal2, int iPlacedBy, void* tr);
+
+	// Portalling angle fix
+	static void __fastcall dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3);
+
+	// Crosshair
 	static int __fastcall dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h, const void* clr, float flApparentZ);
 	static bool dClipTransform(const Vector& point, Vector* pScreen);
-	static void __fastcall dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3);
 	static void __fastcall dSetBounds(void* ecx, void* edx, int x, int y, int w, int h);
 	static void dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h);
 	static void __fastcall dPush2DView(void* ecx, void* edx, IMatRenderContext* pRenderContext, const CViewSetup& view, int nFlags, ITexture* pRenderTarget, void* frustumPlanes);
 	static void __fastcall dRender(void* ecx, void* edx, vrect_t* rect);
-
 	static bool ScreenTransform(const Vector& point, Vector* pScreen);
 
-
+	// Grabbable objects
+	static Vector* __fastcall dWeapon_ShootPosition(void* ecx, void* edx, Vector* shootPos);
+	static float __fastcall dComputeError(void* ecx, void* edx);
+	static bool __fastcall dUpdateObject(void* ecx, void* edx, void* pPlayer, float flError, bool bIsTeleport = false);
+	static void __fastcall dRotateObject(void* ecx, void* edx, void* pPlayer, float fRotAboutUp, float fRotAboutRight, bool bUseWorldUpInsteadOfPlayerUp);
+	static QAngle* __fastcall dEyeAngles(void* ecx, void* edx);
+	
 	static inline int m_PushHUDStep;
 	static inline bool m_PushedHud;
 };
