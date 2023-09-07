@@ -32,6 +32,9 @@ Game::Game()
     m_VguiSurface = (ISurface *)GetInterface("vguimatsurface.dll", "VGUI_Surface031");
 
     m_Offsets = new Offsets();
+
+    m_ClientMode = **(IClientMode***)(m_Offsets->g_pClientMode.address);
+
     m_VR = new VR(this);
     m_Hooks = new Hooks(this);
 

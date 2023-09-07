@@ -153,15 +153,43 @@ void VR::InstallApplicationManifest(const char *fileName)
     vr::VRApplications()->AddApplicationManifest(path);
 }
 
+void VR::SetScreenSizeOverride(bool bState) {
+    bool isOverriding = m_Game->m_VguiSurface->IsScreenSizeOverrideActive();
+
+    if (bState && !isOverriding || !bState && isOverriding) {
+        int iOldWidth, iOldHeight;
+        m_Game->m_VguiSurface->GetScreenSize(iOldWidth, iOldHeight);
+        m_Game->m_VguiSurface->ForceScreenSizeOverride(bState, m_RenderWidth, m_RenderHeight);
+       /*int x = 0, y = 0, w = m_RenderWidth, h = m_RenderHeight;
+
+        if (m_Game->m_ClientMode->GetViewport())
+            m_Game->m_ClientMode->AdjustEngineViewport(x, y, w, h);*/
+
+        if (bState) {
+            /*IMatRenderContext* renderContext = m_Game->m_MaterialSystem->GetRenderContext();
+            renderContext->Viewport(0, 0, m_RenderWidth, m_RenderHeight);
+            renderContext->Release();*/
+        }
+
+        m_Game->m_VguiSurface->OnScreenSizeChanged(iOldWidth, iOldHeight);
+    }
+}
+
 void VR::Update()
 {
     if (!m_IsInitialized || !m_Game->m_Initialized)
         return;
 
+    
+
     if (m_IsVREnabled && g_D3DVR9)
     {
+        bool inGame = m_Game->m_EngineClient->IsInGame();
+
+        //SetScreenSizeOverride(inGame);
+
         // Prevents crashing at menu
-        if (!m_Game->m_EngineClient->IsInGame())
+        if (!inGame)
         {
             IMatRenderContext *rndrContext = m_Game->m_MaterialSystem->GetRenderContext();
             rndrContext->SetRenderTarget(NULL);
@@ -169,17 +197,18 @@ void VR::Update()
 
             m_Game->m_CachedArmsModel = false;
             m_CreatedVRTextures = false; // Have to recreate textures otherwise some workshop maps won't render
-        }
+        } 
     }
 
     SubmitVRTextures();
     UpdatePosesAndActions();
     UpdateTracking();
 
-    if (m_Game->m_VguiSurface->IsCursorVisible())
+    if (m_Game->m_VguiSurface->IsCursorVisible()) {
         ProcessMenuInput();
-    else
+    } else {
         ProcessInput();
+    }
 }
 
 void VR::CreateVRTextures()
@@ -189,6 +218,8 @@ void VR::CreateVRTextures()
     IMatRenderContext* rndrContext = m_Game->m_MaterialSystem->GetRenderContext();
     rndrContext->GetWindowSize(windowWidth, windowHeight);
     rndrContext->Release();
+
+    std::cout << "RenderTexture - Width: " << m_RenderWidth << ", Height: " << m_RenderHeight << "\n";
 
     m_Game->m_MaterialSystem->isGameRunning = false;
     m_Game->m_MaterialSystem->BeginRenderTargetAllocation();
@@ -201,7 +232,7 @@ void VR::CreateVRTextures()
     m_RightEyeTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("rightEye0", m_RenderWidth, m_RenderHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
 
     m_CreatingTextureID = Texture_HUD;
-    m_HUDTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("vrHUD", windowWidth, windowHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
+    m_HUDTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("vrHUD", m_RenderWidth, m_RenderHeight, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
     
     m_CreatingTextureID = Texture_Blank;
     m_BlankTexture = m_Game->m_MaterialSystem->CreateNamedRenderTargetTextureEx("blankTexture", 512, 512, RT_SIZE_NO_CHANGE, m_Game->m_MaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_NOMIP);
@@ -872,8 +903,12 @@ QAngle VR::GetRecommendedViewmodelAbsAngle()
 void VR::UpdateHMDAngles() {
     QAngle hmdAngLocal = m_HmdPose.TrackedDeviceAng;
 
-    hmdAngLocal += m_RotationOffset;
-    hmdAngLocal.Normalize();
+    //hmdAngLocal += m_RotationOffset;
+    hmdAngLocal.x += m_RotationOffset.x;
+    hmdAngLocal.y += m_RotationOffset.y;
+    hmdAngLocal.z += m_RotationOffset.z;
+
+    //hmdAngLocal.Normalize();
 
     QAngle::AngleVectors(hmdAngLocal, &m_HmdForward, &m_HmdRight, &m_HmdUp);
 
@@ -973,9 +1008,13 @@ void VR::UpdateTracking()
 
     m_RightControllerPosRel = hmdToController * m_VRScale;
 
-    rightControllerAngLocal += m_RotationOffset;
+    //rightControllerAngLocal += m_RotationOffset;
+    rightControllerAngLocal.x += m_RotationOffset.x;
+    rightControllerAngLocal.y += m_RotationOffset.y;
+    rightControllerAngLocal.z += m_RotationOffset.z;
+
     // Wrap angle from -180 to 180
-    rightControllerAngLocal.Normalize();
+    //rightControllerAngLocal.Normalize();
 
     QAngle::AngleVectors(leftControllerAngLocal, &m_LeftControllerForward, &m_LeftControllerRight, &m_LeftControllerUp);
     QAngle::AngleVectors(rightControllerAngLocal, &m_RightControllerForward, &m_RightControllerRight, &m_RightControllerUp);

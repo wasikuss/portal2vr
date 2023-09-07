@@ -85,18 +85,33 @@ typedef bool(__thiscall* tTraceFirePortal)(void* thisptr, const Vector& vTraceSt
 
 typedef void(__thiscall* tPlayerPortalled)(void* thisptr, void* a2, __int64 a3);
 
+typedef int(__thiscall* tGetModeHeight)(void* thisptr);
 typedef int(__thiscall* tDrawSelf)(void* thisptr, int x, int y, int w, int h, const void* clr, float flApparentZ);
 typedef bool(__cdecl* tClipTransform)(const Vector& point, Vector* pClip);
 typedef void(__cdecl* tVGui_GetHudBounds)(int slot, int& x, int& y, int& w, int& h);
+typedef void(__cdecl* tVGui_GetPanelBounds)(int slot, int& x, int& y, int& w, int& h);
+typedef void(__cdecl* tVGUI_UpdateScreenSpaceBounds)(int nNumSplits, int sx, int sy, int sw, int sh);
+typedef void(__cdecl* tGetHudSize)(int& w, int& h);
+
 typedef void(__thiscall* tSetBounds)(void* thisptr, int x, int y, int w, int h);
+typedef void(__thiscall* tSetSize)(void* thisptr, int wide, int tall);
+typedef void(__thiscall* tGetScreenSize)(void* thisptr, int& wide, int& tall);
 typedef void(__thiscall* tPush2DView)(void* thisptr, IMatRenderContext* pRenderContext, const CViewSetup& view, int nFlags, ITexture* pRenderTarget, void* frustumPlanes);
 typedef void(__thiscall* tRender)(void* thisptr, vrect_t* rect);
+typedef void(__thiscall* tGetClipRect)(void* thisptr, int& x0, int& y0, int& x1, int& y1);
 
 typedef Vector* (__thiscall* tWeapon_ShootPosition)(void* thisptr, Vector* shootPos);
-typedef float(__thiscall* tComputeError)(void* thisptr);
+typedef double(__thiscall* tComputeError)(void* thisptr);
 typedef bool(__thiscall* tUpdateObject)(void* thisptr, void* pPlayer, float flError, bool bIsTeleport);
+typedef bool(__thiscall* tUpdateObjectVM)(void* thisptr, void* pPlayer, float flError);
 typedef void(__thiscall* tRotateObject)(void* thisptr, void* pPlayer, float fRotAboutUp, float fRotAboutRight, bool bUseWorldUpInsteadOfPlayerUp);
-typedef QAngle*(__thiscall* tEyeAngles)(void* thisptr);
+typedef QAngle&(__thiscall* tEyeAngles)(void* thisptr);
+
+typedef void(__cdecl* tMatrixBuildPerspectiveX)(void*& dst, double flFovX, double flAspect, double flZNear, double flZFar);
+
+typedef int(__cdecl* tGetDefaultFOV)(void*& thisptr);
+typedef double(__cdecl* tGetFOV)(void*& thisptr);
+typedef double(__cdecl* tGetViewModelFOV)(void*& thisptr);
 
 class Hooks
 {
@@ -127,18 +142,34 @@ public:
 	static inline Hook<tGetFullScreenTexture> hkGetFullScreenTexture;
 	static inline Hook<tWeapon_ShootPosition> hkWeapon_ShootPosition;
 	static inline Hook<tTraceFirePortal> hkTraceFirePortal;
+
+	static inline Hook<tGetModeHeight> hkGetModeHeight;
 	static inline Hook<tDrawSelf> hkDrawSelf;
 	static inline Hook<tClipTransform> hkClipTransform;
 	static inline Hook<tPlayerPortalled> hkPlayerPortalled;
 	static inline Hook<tVGui_GetHudBounds> hkVGui_GetHudBounds;
+	static inline Hook<tVGui_GetPanelBounds> hkVGui_GetPanelBounds;
+	static inline Hook<tVGUI_UpdateScreenSpaceBounds> hkVGUI_UpdateScreenSpaceBounds;
 	static inline Hook<tSetBounds> hkSetBounds;
+	static inline Hook<tGetScreenSize> hkGetScreenSize;
 	static inline Hook<tPush2DView> hkPush2DView;
 	static inline Hook<tRender> hkRender;
-
+	static inline Hook<tGetClipRect> hkGetClipRect;
+	static inline Hook<tGetHudSize> hkGetHudSize;
+	static inline Hook<tSetSize> hkSetSize;
+	
 	static inline Hook<tComputeError> hkComputeError;
 	static inline Hook<tUpdateObject> hkUpdateObject;
+	static inline Hook<tUpdateObjectVM> hkUpdateObjectVM;
 	static inline Hook<tRotateObject> hkRotateObject;
 	static inline Hook<tEyeAngles> hkEyeAngles;
+
+	static inline Hook<tMatrixBuildPerspectiveX> hkMatrixBuildPerspectiveX;
+
+	
+	static inline Hook<tGetDefaultFOV> hkGetDefaultFOV;
+	static inline Hook<tGetFOV> hkGetFOV;
+	static inline Hook<tGetViewModelFOV> hkGetViewModelFOV;
 
 	Hooks() {};
 	Hooks(Game *game);
@@ -185,21 +216,35 @@ public:
 	static void __fastcall dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3);
 
 	// Crosshair
+	static int __fastcall dGetModeHeight(void* ecx, void* edx);
 	static int __fastcall dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h, const void* clr, float flApparentZ);
 	static bool dClipTransform(const Vector& point, Vector* pScreen);
 	static void __fastcall dSetBounds(void* ecx, void* edx, int x, int y, int w, int h);
+	static void __fastcall dSetSize(void* ecx, void* edx, int wide, int tall);
+	static void __fastcall dGetScreenSize(void* ecx, void* edx, int& wide, int& tall);
+	static void dGetHudSize(int& w, int& h);
 	static void dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h);
+	static void dVGui_GetPanelBounds(int slot, int& x, int& y, int& w, int& h);
+	static void dVGUI_UpdateScreenSpaceBounds(int nNumSplits, int sx, int sy, int sw, int sh);
 	static void __fastcall dPush2DView(void* ecx, void* edx, IMatRenderContext* pRenderContext, const CViewSetup& view, int nFlags, ITexture* pRenderTarget, void* frustumPlanes);
 	static void __fastcall dRender(void* ecx, void* edx, vrect_t* rect);
-	static bool ScreenTransform(const Vector& point, Vector* pScreen);
+	static bool ScreenTransform(const Vector& point, Vector* pScreen, int width, int height);
+	static void __fastcall dGetClipRect(void* ecx, void* edx, int& x0, int& y0, int& x1, int& y1);
 
 	// Grabbable objects
 	static Vector* __fastcall dWeapon_ShootPosition(void* ecx, void* edx, Vector* shootPos);
-	static float __fastcall dComputeError(void* ecx, void* edx);
+	static double __fastcall dComputeError(void* ecx, void* edx);
 	static bool __fastcall dUpdateObject(void* ecx, void* edx, void* pPlayer, float flError, bool bIsTeleport = false);
+	static bool __fastcall dUpdateObjectVM(void* ecx, void* edx, void* pPlayer, float flError);
 	static void __fastcall dRotateObject(void* ecx, void* edx, void* pPlayer, float fRotAboutUp, float fRotAboutRight, bool bUseWorldUpInsteadOfPlayerUp);
-	static QAngle* __fastcall dEyeAngles(void* ecx, void* edx);
+	static QAngle& __fastcall dEyeAngles(void* ecx, void* edx);
 	
+	static void dMatrixBuildPerspectiveX(void*& dst, double flFovX, double flAspect, double flZNear, double flZFar);
+
+	static int __fastcall dGetDefaultFOV(void* ecx, void* edx);
+	static double __fastcall dGetFOV(void* ecx, void* edx);
+	static double __fastcall dGetViewModelFOV(void* ecx, void* edx);
+
 	static inline int m_PushHUDStep;
 	static inline bool m_PushedHud;
 };

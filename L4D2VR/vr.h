@@ -26,7 +26,6 @@ struct SharedTextureHolder
 	vr::Texture_t m_VRTexture;
 };
 
-
 class VR
 {
 public:
@@ -193,6 +192,7 @@ public:
 	int SetActionManifest(const char *fileName);
 	void InstallApplicationManifest(const char *fileName);
 	void Update();
+	void SetScreenSizeOverride(bool bState);
 	void CreateVRTextures();
 	void SubmitVRTextures();
 	void RepositionOverlays();

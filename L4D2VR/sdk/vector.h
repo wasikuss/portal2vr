@@ -877,6 +877,8 @@ public:
 	vec_t	Length() const;
 	vec_t	LengthSqr() const;
 
+	void Normalize();
+
 	// negate the QAngle components
 	//void	Negate(); 
 
@@ -962,6 +964,31 @@ inline QAngle QAngle::operator-(const QAngle &v) const
 	res.z = z - v.z;
 	return res;
 }
+
+inline bool QAngle::operator!=(const QAngle& src) const
+{
+	return (src.x != this->x) || (src.y != this->y) || (src.z != this->z);
+}
+
+/*inline QAngle& QAngle::operator+=(const QAngle& v)
+{
+	QAngle res;
+	res.x = x + v.x;
+	res.y = y + v.y;
+	res.z = z + v.z;
+	return res;
+}*/
+
+/*inline float AngleNormalize(float angle) {
+	return 360 * std::floor((angle + 180) / 360);
+}
+
+inline void QAngle::Normalize()
+{
+	this->x = AngleNormalize(this->x);
+	this->y = AngleNormalize(this->y);
+	this->z = AngleNormalize(this->z);
+}*/
 
 inline void QAngle::AngleVectors(const QAngle &angles, Vector *forward, Vector *right, Vector *up)
 {
