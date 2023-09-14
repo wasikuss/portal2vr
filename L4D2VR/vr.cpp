@@ -961,6 +961,16 @@ void VR::UpdateTracking()
 
     m_AimPos = Trace((uint32_t*)localPlayer);
 
+    C_Portal_Player* portalPlayer = (C_Portal_Player*)localPlayer;
+    //uintptr_t* m_PointLaser = *(uintptr_t**)((uintptr_t)localPlayer + 0x23C0);
+
+    if (portalPlayer->m_PointLaser) {
+        portalPlayer->m_PointLaser->SetControlPoint(1, m_AimPos);
+    } else {
+        std::cout << "Creating Point Laser Beam Sight Thingy" << "\n";
+        m_Game->m_Hooks->CreatePingPointer(localPlayer, m_AimPos);
+    }
+
     // Check if camera is clipping inside wall
     /*CGameTrace trace;
     Ray_t ray;
@@ -1059,10 +1069,15 @@ Vector VR::GetViewAngle()
     return Vector( m_HmdAngAbs.x, m_HmdAngAbs.y, m_HmdAngAbs.z );
 }
 
+Vector VR::GetViewOrigin(Vector setupOrigin)
+{
+    Vector center = setupOrigin + m_HmdPosRelative;
+    return center + (m_HmdForward * -(m_EyeZ * m_VRScale));
+}
 
 Vector VR::GetViewOriginLeft(Vector setupOrigin)
 {
-    Vector viewOriginLeft = setupOrigin + m_HmdPosRelative + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
+    Vector viewOriginLeft = GetViewOrigin(setupOrigin);
     viewOriginLeft -= m_HmdRight * ((m_Ipd * m_IpdScale * m_VRScale) / 2);
 
     return viewOriginLeft;
@@ -1070,7 +1085,7 @@ Vector VR::GetViewOriginLeft(Vector setupOrigin)
 
 Vector VR::GetViewOriginRight(Vector setupOrigin)
 {
-    Vector viewOriginRight = setupOrigin + m_HmdPosRelative + (m_HmdForward * (-(m_EyeZ * m_VRScale)));
+    Vector viewOriginRight = GetViewOrigin(setupOrigin);
     viewOriginRight += m_HmdRight * ((m_Ipd * m_IpdScale * m_VRScale) / 2);
 
     return viewOriginRight;

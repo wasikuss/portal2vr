@@ -136,6 +136,7 @@ public:
 
 	bool m_PressedTurn = false;
 	bool m_PushingThumbstick = false;
+	bool m_PointerCreated = false;
 
 	// action set
 	vr::VRActionSetHandle_t m_ActionSet;
@@ -212,6 +213,7 @@ public:
 	void UpdateHMDAngles();
 	void UpdateTracking();
 	Vector GetViewAngle();
+	Vector GetViewOrigin(Vector setupOrigin);
 	Vector GetViewOriginLeft(Vector setupOrigin);
 	Vector GetViewOriginRight(Vector setupOrigin);
 	bool PressedDigitalAction(vr::VRActionHandle_t &actionHandle, bool checkIfActionChanged = false);

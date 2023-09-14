@@ -5,6 +5,7 @@
 #include <math.h>
 #include "game.h"
 #include "offsets.h"
+#include "cnewparticleeffect.h"
 #include "usercmd.h"
 #include "material.h"
 #include "worldsize.h"
@@ -2178,4 +2179,90 @@ public:
 	virtual void GetAbsPosForContext(int id, int& x, int& y) = 0;
 	virtual void ResetFontCaches() = 0;
 	virtual bool IsScreenSizeOverrideActive() = 0;
+};
+
+class C_Portal_Player
+{
+public:
+	char pad_0000[9152]; //0000
+	CNewParticleEffect* m_PointLaser; //0x23C0
+};
+
+class VPanel
+{
+public:
+	VPanel();
+	virtual ~VPanel();
+
+	virtual void Init(void* attachedClientPanel);
+
+	virtual void* Plat();
+	virtual void SetPlat(void* pl);
+
+	virtual void GetHPanel(); // safe pointer handling
+	virtual void SetHPanel(void* hPanel);
+
+	virtual bool IsPopup();
+	virtual void SetPopup(bool state);
+	virtual bool IsFullyVisible();
+
+	virtual void SetPos(int x, int y);
+	virtual void GetPos(int& x, int& y);
+	virtual void SetSize(int wide, int tall);
+	virtual void GetSize(int& wide, int& tall);
+	virtual void SetMinimumSize(int wide, int tall);
+	virtual void GetMinimumSize(int& wide, int& tall);
+	virtual void SetZPos(int z);
+	virtual int  GetZPos();
+
+	virtual void GetAbsPos(int& x, int& y);
+	virtual void GetClipRect(int& x0, int& y0, int& x1, int& y1);
+	virtual void SetInset(int left, int top, int right, int bottom);
+	virtual void GetInset(int& left, int& top, int& right, int& bottom);
+
+	virtual void Solve();
+
+	virtual void SetVisible(bool state);
+	virtual void SetEnabled(bool state);
+	virtual bool IsVisible();
+	virtual bool IsEnabled();
+	virtual void SetParent(VPanel* newParent);
+	virtual int GetChildCount();
+	virtual VPanel* GetChild(int index);
+	virtual void* GetChildren();
+	virtual VPanel* GetParent();
+	virtual void MoveToFront();
+	virtual void MoveToBack();
+	virtual bool HasParent(VPanel* potentialParent);
+
+	// gets names of the object (for debugging purposes)
+	virtual const char* GetName();
+	virtual const char* GetClassName();
+
+	virtual void GetScheme();
+
+	// handles a message
+	virtual void SendMessage(void* params, VPanel ifromPanel);
+
+	// wrapper to get Client panel interface
+	virtual void* Client();
+
+	// input interest
+	virtual void SetKeyBoardInputEnabled(bool state);
+	virtual void SetMouseInputEnabled(bool state);
+	virtual bool IsKeyBoardInputEnabled();
+	virtual bool IsMouseInputEnabled();
+
+	virtual bool IsTopmostPopup() const;
+	virtual void SetTopmostPopup(bool bEnable);
+
+	virtual void SetMessageContextId(int nContextId);
+	virtual int GetMessageContextId();
+
+	virtual void OnUnserialized(void* pElement);
+	// sibling pins
+	virtual void SetSiblingPin(VPanel* newSibling, byte iMyCornerToPin = 0, byte iSiblingCornerToPinTo = 0);
+
+public:
+	virtual void GetInternalAbsPos(int& x, int& y);
 };

@@ -90,7 +90,11 @@ typedef int(__thiscall* tDrawSelf)(void* thisptr, int x, int y, int w, int h, co
 typedef bool(__cdecl* tClipTransform)(const Vector& point, Vector* pClip);
 typedef void(__cdecl* tVGui_GetHudBounds)(int slot, int& x, int& y, int& w, int& h);
 typedef void(__cdecl* tVGui_GetPanelBounds)(int slot, int& x, int& y, int& w, int& h);
+
+// HUD
 typedef void(__cdecl* tVGUI_UpdateScreenSpaceBounds)(int nNumSplits, int sx, int sy, int sw, int sh);
+typedef void(__cdecl* tVGui_GetTrueScreenSize)(int &w, int &h);
+
 typedef void(__cdecl* tGetHudSize)(int& w, int& h);
 
 typedef void(__thiscall* tSetBounds)(void* thisptr, int x, int y, int w, int h);
@@ -112,6 +116,13 @@ typedef void(__cdecl* tMatrixBuildPerspectiveX)(void*& dst, double flFovX, doubl
 typedef int(__cdecl* tGetDefaultFOV)(void*& thisptr);
 typedef double(__cdecl* tGetFOV)(void*& thisptr);
 typedef double(__cdecl* tGetViewModelFOV)(void*& thisptr);
+
+typedef void(__thiscall* tCreatePingPointer)(void* thisptr, Vector vecDestintaion);
+typedef void(__thiscall* tSetDrawOnlyForSplitScreenUser)(void* thisptr, int nSlot);
+typedef void(__thiscall* tClientThink)(void* thisptr);
+typedef void*(__cdecl* tGetPortalPlayer)(int index);
+typedef int(__cdecl* tPrecacheParticleSystem)(const char* pParticleSystemName);
+typedef void(__thiscall* tPrecache)(void* thisptr);
 
 class Hooks
 {
@@ -149,7 +160,10 @@ public:
 	static inline Hook<tPlayerPortalled> hkPlayerPortalled;
 	static inline Hook<tVGui_GetHudBounds> hkVGui_GetHudBounds;
 	static inline Hook<tVGui_GetPanelBounds> hkVGui_GetPanelBounds;
+
 	static inline Hook<tVGUI_UpdateScreenSpaceBounds> hkVGUI_UpdateScreenSpaceBounds;
+	static inline Hook<tVGui_GetTrueScreenSize> hkVGui_GetTrueScreenSize;
+
 	static inline Hook<tSetBounds> hkSetBounds;
 	static inline Hook<tGetScreenSize> hkGetScreenSize;
 	static inline Hook<tPush2DView> hkPush2DView;
@@ -170,6 +184,11 @@ public:
 	static inline Hook<tGetDefaultFOV> hkGetDefaultFOV;
 	static inline Hook<tGetFOV> hkGetFOV;
 	static inline Hook<tGetViewModelFOV> hkGetViewModelFOV;
+
+	static inline Hook<tSetDrawOnlyForSplitScreenUser> hkSetDrawOnlyForSplitScreenUser;
+	static inline Hook<tClientThink> hkClientThink;
+	static inline Hook<tPrecache> hkPrecache;
+	//Precache
 
 	Hooks() {};
 	Hooks(Game *game);
@@ -225,7 +244,10 @@ public:
 	static void dGetHudSize(int& w, int& h);
 	static void dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h);
 	static void dVGui_GetPanelBounds(int slot, int& x, int& y, int& w, int& h);
+
 	static void dVGUI_UpdateScreenSpaceBounds(int nNumSplits, int sx, int sy, int sw, int sh);
+	static void dVGui_GetTrueScreenSize(int &w, int &h);
+
 	static void __fastcall dPush2DView(void* ecx, void* edx, IMatRenderContext* pRenderContext, const CViewSetup& view, int nFlags, ITexture* pRenderTarget, void* frustumPlanes);
 	static void __fastcall dRender(void* ecx, void* edx, vrect_t* rect);
 	static bool ScreenTransform(const Vector& point, Vector* pScreen, int width, int height);
@@ -245,6 +267,14 @@ public:
 	static double __fastcall dGetFOV(void* ecx, void* edx);
 	static double __fastcall dGetViewModelFOV(void* ecx, void* edx);
 
+	static void __fastcall dSetDrawOnlyForSplitScreenUser(void* ecx, void* edx, int nSlot);
+	static void __fastcall dClientThink(void* ecx, void* edx);
+	static void __fastcall dPrecache(void* ecx, void* edx);
+	
 	static inline int m_PushHUDStep;
 	static inline bool m_PushedHud;
+
+	static inline tCreatePingPointer CreatePingPointer;
+	static inline tGetPortalPlayer GetPortalPlayer;
+	static inline tPrecacheParticleSystem PrecacheParticleSystem;
 };

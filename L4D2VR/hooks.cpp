@@ -42,9 +42,9 @@ Hooks::Hooks(Game *game)
 	//hkDrawModelExecute.enableHook();
 	hkRenderView.enableHook();
 	/*hkPushRenderTargetAndViewport.enableHook();
-	hkPopRenderTargetAndViewport.enableHook();
-	hkVgui_Paint.enableHook();
-	hkIsSplitScreen.enableHook();
+	hkPopRenderTargetAndViewport.enableHook();*/
+	//hkVgui_Paint.enableHook();
+	/*hkIsSplitScreen.enableHook();
 	hkPrePushRenderTarget.enableHook();*/
 	//hkGetFullScreenTexture.enableHook();
 
@@ -53,8 +53,8 @@ Hooks::Hooks(Game *game)
 	hkDrawSelf.enableHook();
 	hkPlayerPortalled.enableHook();
 
-	/*hkGetModeHeight.enableHook();
-	hkVGui_GetHudBounds.enableHook();
+	//hkGetModeHeight.enableHook();
+	/*hkVGui_GetHudBounds.enableHook();
 	hkVGui_GetPanelBounds.enableHook();
 	hkVGUI_UpdateScreenSpaceBounds.enableHook();
 	hkSetBounds.enableHook();
@@ -77,6 +77,9 @@ Hooks::Hooks(Game *game)
 	hkGetFOV.enableHook();
 	hkGetViewModelFOV.enableHook();
 
+	hkSetDrawOnlyForSplitScreenUser.enableHook();
+	hkClientThink.enableHook();
+	hkPrecache.enableHook();
 	//hkMatrixBuildPerspectiveX.enableHook();
 }
 
@@ -179,12 +182,15 @@ int Hooks::initSourceHooks()
 	hkVGui_GetPanelBounds.createHook((LPVOID)(m_Game->m_Offsets->VGui_GetPanelBounds.address), &dVGui_GetPanelBounds);
 	
 	hkVGUI_UpdateScreenSpaceBounds.createHook((LPVOID)(m_Game->m_Offsets->VGUI_UpdateScreenSpaceBounds.address), &dVGUI_UpdateScreenSpaceBounds);
+	hkVGui_GetTrueScreenSize.createHook((LPVOID)(m_Game->m_Offsets->VGui_GetTrueScreenSize.address), &dVGui_GetTrueScreenSize);
 
-	LPVOID SetBoundsAddr = (LPVOID)(m_Game->m_Offsets->SetBounds.address);
-	hkSetBounds.createHook(SetBoundsAddr, &dSetBounds);
+	//hkSetBounds.createHook((LPVOID)m_Game->m_Offsets->SetBoundsC.address, &dSetBounds);
+	hkSetBounds.createHook((LPVOID)m_Game->m_Offsets->SetBoundsE.address, &dSetBounds);
 
-	hkSetSize.createHook((LPVOID)(m_Game->m_Offsets->SetSize.address), &dSetSize);
-	
+	//hkSetSize.createHook((LPVOID)(m_Game->m_Offsets->SetSizeC.address), &dSetSize);
+	//hkSetSize.createHook((LPVOID)(m_Game->m_Offsets->SetSizeE.address), &dSetSize);
+	hkSetSize.createHook((LPVOID)(m_Game->m_Offsets->SetSizeV.address), &dSetSize);
+
 	hkGetScreenSize.createHook((LPVOID)(m_Game->m_Offsets->GetScreenSize.address), &dGetScreenSize);
 	hkGetHudSize.createHook((LPVOID)(m_Game->m_Offsets->GetHudSize.address), &dGetHudSize);
 
@@ -211,10 +217,46 @@ int Hooks::initSourceHooks()
 	hkGetDefaultFOV.createHook((LPVOID)(m_Game->m_Offsets->GetDefaultFOV.address), &dGetDefaultFOV);
 	hkGetFOV.createHook((LPVOID)(m_Game->m_Offsets->GetFOV.address), &dGetFOV);
 	hkGetViewModelFOV.createHook((LPVOID)(m_Game->m_Offsets->GetViewModelFOV.address), &dGetViewModelFOV);
+	
+	GetPortalPlayer = (tGetPortalPlayer)m_Game->m_Offsets->GetPortalPlayer.address;
+	CreatePingPointer = (tCreatePingPointer)m_Game->m_Offsets->CreatePingPointer.address;
+	PrecacheParticleSystem = (tPrecacheParticleSystem)m_Game->m_Offsets->PrecacheParticleSystem.address;
+	hkPrecache.createHook((LPVOID)(m_Game->m_Offsets->Precache.address), &dPrecache);
+	
+
+	hkSetDrawOnlyForSplitScreenUser.createHook((LPVOID)m_Game->m_Offsets->SetDrawOnlyForSplitScreenUser.address, &dSetDrawOnlyForSplitScreenUser);
+	hkClientThink.createHook((LPVOID)(m_Game->m_Offsets->ClientThink.address), &dClientThink);
 
 	return 1;
+} 
+
+void __fastcall Hooks::dPrecache(void* ecx, void* edx) {
+	hkPrecache.fOriginal(ecx);
+	PrecacheParticleSystem("robot_point_beam");
 }
 
+void __fastcall Hooks::dClientThink(void* ecx, void* edx) {
+	//std::cout << "dSetDrawOnlyForSplitScreenUser: " << nSlot << "\n";
+
+	/*int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
+	C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
+
+	if (localPlayer) {
+		uintptr_t* m_PointLaser = *(uintptr_t**)((uintptr_t)localPlayer + 0x23C0);
+
+		if (!m_PointLaser) {
+			std::cout << "Creating Point Laser Beam Sight Thingy" << "\n";
+			m_Game->m_Hooks->CreatePingPointer(localPlayer, m_VR->m_AimPos);
+		}
+	}*/
+
+	hkClientThink.fOriginal(ecx);
+}
+
+void __fastcall Hooks::dSetDrawOnlyForSplitScreenUser(void* ecx, void* edx, int nSlot) {
+	//std::cout << "dSetDrawOnlyForSplitScreenUser: " << nSlot << "\n";
+	hkSetDrawOnlyForSplitScreenUser.fOriginal(ecx, -1);
+}
 
 ITexture *__fastcall Hooks::dGetFullScreenTexture()
 {
@@ -236,6 +278,11 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 
 	if (m_Game->m_VguiSurface->IsCursorVisible())
 		return hkRenderView.fOriginal(ecx, setup, hudViewSetup, nClearFlags, whatToDraw);
+
+	VPanel* g_pFullscreenRootPanel = *(VPanel**)(m_Game->m_Offsets->g_pFullscreenRootPanel.address);
+
+	/*int w, h;
+	g_pFullscreenRootPanel->GetSize(w, h);*/
 
 	IMaterialSystem* matSystem = m_Game->m_MaterialSystem;
 
@@ -382,6 +429,7 @@ void __fastcall Hooks::dCalcViewModelView(void *ecx, void *edx, const Vector &ey
 		vecNewOrigin = m_VR->GetRecommendedViewmodelAbsPos(eyePosition);
 		vecNewAngles = m_VR->GetRecommendedViewmodelAbsAngle();
 	}
+
 
 	return hkCalcViewModelView.fOriginal(ecx, vecNewOrigin, vecNewAngles);
 }
@@ -610,7 +658,11 @@ void Hooks::dViewport(void *ecx, void *edx, int x, int y, int width, int height)
 void Hooks::dGetViewport(void *ecx, void *edx, int &x, int &y, int &width, int &height)
 {
 	hkGetViewport.fOriginal(ecx, x, y, width, height);
-	std::cout << "dGetViewport - X: " << x << ", Y: " << y << ", W: " << width << ", H: " << height << "\n";
+
+	width = m_VR->m_RenderWidth;
+	height = m_VR->m_RenderHeight;
+
+	//std::cout << "dGetViewport - X: " << x << ", Y: " << y << ", W: " << width << ", H: " << height << "\n";
 }
 
 int Hooks::dGetPrimaryAttackActivity(void *ecx, void *edx, void *meleeInfo)
@@ -767,6 +819,7 @@ bool __fastcall Hooks::dTraceFirePortal(void* ecx, void* edx, const Vector& vTra
 	{
 		vNewTraceStart = m_VR->GetRightControllerAbsPos();
 		vNewDirection = m_VR->m_RightControllerForward;
+
 	}
 
 	return hkTraceFirePortal.fOriginal(ecx, vNewTraceStart, vNewDirection, bPortal2, iPlacedBy, tr);
@@ -817,9 +870,9 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 
 	//int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
 
-	auto viewport = m_Game->m_ClientMode->GetViewport();
+	//auto viewport = m_Game->m_ClientMode->GetViewport();
 
-	int newX = x;
+	/*int newX = x;
 	int	newY = y;
 
 
@@ -830,9 +883,9 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 
 		Vector screen = { 0, 0, 0 };
 
-		/*Vector vec = m_VR->m_AimPos - m_VR->GetRightControllerAbsPos();
+		//Vector vec = m_VR->m_AimPos - m_VR->GetRightControllerAbsPos();
 
-		newZ = 1.0 / sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);*/
+		//newZ = 1.0 / sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 
 		ScreenTransform(m_VR->m_AimPos, &screen, m_VR->m_RenderWidth, m_VR->m_RenderHeight);
 
@@ -843,7 +896,8 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 		newY = screen.y + offsetY;
 	}
 
-	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, flApparentZ);
+	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, flApparentZ);*/
+	return 0;
 }
 
 void __cdecl Hooks::dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h) {
@@ -856,7 +910,7 @@ void __cdecl Hooks::dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h)
 		hkVGui_GetHudBounds.fOriginal(slot, x, y, w, h);
 	}
 
-	std::cout << "dVGui_GetHudBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << "\n";
+	//std::cout << "dVGui_GetHudBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << "\n";
 }
 
 void __cdecl Hooks::dVGui_GetPanelBounds(int slot, int& x, int& y, int& w, int& h) {
@@ -870,11 +924,16 @@ void __cdecl Hooks::dVGui_GetPanelBounds(int slot, int& x, int& y, int& w, int& 
 		hkVGui_GetPanelBounds.fOriginal(slot, x, y, w, h);
 	}
 
-	std::cout << "dVGui_GetPanelBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << "\n";
+	//std::cout << "dVGui_GetPanelBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << "\n";
 }
 
 void __cdecl Hooks::dVGUI_UpdateScreenSpaceBounds(int nNumSplits, int sx, int sy, int sw, int sh) {
 	hkVGUI_UpdateScreenSpaceBounds.fOriginal(nNumSplits, sx, sy, m_VR->m_RenderWidth, m_VR->m_RenderHeight);
+}
+
+void __cdecl Hooks::dVGui_GetTrueScreenSize(int &w, int &h) {
+	w = m_VR->m_RenderWidth;
+	h = m_VR->m_RenderHeight;
 }
 
 void __fastcall Hooks::dGetScreenSize(void* ecx, void* edx, int& wide, int& tall) {
@@ -901,15 +960,15 @@ void __fastcall Hooks::dRender(void* ecx, void* edx, vrect_t* rect) {
 }
 
 void __fastcall Hooks::dSetBounds(void* ecx, void* edx, int x, int y, int w, int h) {
-	hkSetBounds.fOriginal(ecx, x, y, m_VR->m_RenderWidth, m_VR->m_RenderHeight);
+	std::cout << "dSetBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h << "\n";
 
-	//std::cout << "dSetBounds - X: " << x << ", Y: " << y << ", W: " << w << ", H: " << h  << "\n";
+	hkSetBounds.fOriginal(ecx, x, y, m_VR->m_RenderWidth, m_VR->m_RenderHeight);
 }
 
 void __fastcall Hooks::dSetSize(void* ecx, void* edx, int wide, int tall) {
 	hkSetSize.fOriginal(ecx, wide, tall);
 
-	std::cout << "dSetSize - Wide: " << wide << ", Tall: " << tall  << "\n";
+	//std::cout << "dSetSize - Wide: " << wide << ", Tall: " << tall  << "\n";
 }
 
 void __fastcall Hooks::dGetClipRect(void* ecx, void* edx, int& x0, int& y0, int& x1, int& y1) {
