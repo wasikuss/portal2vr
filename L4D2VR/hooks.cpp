@@ -919,12 +919,8 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 
 	//auto viewport = m_Game->m_ClientMode->GetViewport();
 
-	if (m_VR->m_AimMode != 1)
-		return 0;
-
 	int newX = x;
 	int	newY = y;
-
 
 	if (m_VR->m_IsVREnabled)
 	{

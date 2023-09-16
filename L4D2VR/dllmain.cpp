@@ -8,11 +8,12 @@
 
 DWORD WINAPI InitL4D2VR(HMODULE hModule)
 {
-#ifdef _DEBUG
+// Release if buggy, so we'll be releasing the debug binary
+/*#ifdef _DEBUG
     AllocConsole();
     FILE *fp;
     freopen_s(&fp, "CONOUT$", "w", stdout);
-#endif
+#endif*/
 
     // Make sure -insecure is used
     LPWSTR *szArglist;
