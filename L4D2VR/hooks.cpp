@@ -41,6 +41,7 @@ Hooks::Hooks(Game *game)
 
 	//hkDrawModelExecute.enableHook();
 	hkRenderView.enableHook();
+
 	/*hkPushRenderTargetAndViewport.enableHook();
 	hkPopRenderTargetAndViewport.enableHook();*/
 	//hkVgui_Paint.enableHook();
@@ -80,7 +81,7 @@ Hooks::Hooks(Game *game)
 	hkSetDrawOnlyForSplitScreenUser.enableHook();
 	hkClientThink.enableHook();
 	hkPrecache.enableHook();
-	//hkMatrixBuildPerspectiveX.enableHook();
+	hkCHudCrosshair_ShouldDraw.enableHook();
 }
 
 Hooks::~Hooks()
@@ -160,9 +161,13 @@ int Hooks::initSourceHooks()
 	LPVOID ClipTransformAddr = (LPVOID)(m_Game->m_Offsets->ClipTransform.address);
 	hkClipTransform.createHook(ClipTransformAddr, &dClipTransform);
 
+	// Portalling
 	LPVOID PlayerPortalledAddr = (LPVOID)(m_Game->m_Offsets->PlayerPortalled.address);
 	hkPlayerPortalled.createHook(PlayerPortalledAddr, &dPlayerPortalled);
 
+	UTIL_Portal_FirstAlongRay = (tUTIL_Portal_FirstAlongRay)m_Game->m_Offsets->UTIL_Portal_FirstAlongRay.address;
+	UTIL_IntersectRayWithPortal = (tUTIL_IntersectRayWithPortal)m_Game->m_Offsets->UTIL_IntersectRayWithPortal.address;
+	UTIL_Portal_AngleTransform = (tUTIL_Portal_AngleTransform)m_Game->m_Offsets->UTIL_Portal_AngleTransform.address;
 
 	/*void *clientMode = nullptr;
 	while (!clientMode)
@@ -211,24 +216,34 @@ int Hooks::initSourceHooks()
 	hkRotateObject.createHook((LPVOID)(m_Game->m_Offsets->RotateObject.address), &dRotateObject);
 	hkEyeAngles.createHook((LPVOID)(m_Game->m_Offsets->EyeAngles.address), &dEyeAngles);
 
-
 	hkMatrixBuildPerspectiveX.createHook((LPVOID)(m_Game->m_Offsets->MatrixBuildPerspectiveX.address), &dMatrixBuildPerspectiveX);
 
+	// Portal Gun VFX
 	hkGetDefaultFOV.createHook((LPVOID)(m_Game->m_Offsets->GetDefaultFOV.address), &dGetDefaultFOV);
 	hkGetFOV.createHook((LPVOID)(m_Game->m_Offsets->GetFOV.address), &dGetFOV);
 	hkGetViewModelFOV.createHook((LPVOID)(m_Game->m_Offsets->GetViewModelFOV.address), &dGetViewModelFOV);
 	
+	// Laser Pointer
 	GetPortalPlayer = (tGetPortalPlayer)m_Game->m_Offsets->GetPortalPlayer.address;
 	CreatePingPointer = (tCreatePingPointer)m_Game->m_Offsets->CreatePingPointer.address;
 	PrecacheParticleSystem = (tPrecacheParticleSystem)m_Game->m_Offsets->PrecacheParticleSystem.address;
 	hkPrecache.createHook((LPVOID)(m_Game->m_Offsets->Precache.address), &dPrecache);
-	
-
 	hkSetDrawOnlyForSplitScreenUser.createHook((LPVOID)m_Game->m_Offsets->SetDrawOnlyForSplitScreenUser.address, &dSetDrawOnlyForSplitScreenUser);
+	hkCHudCrosshair_ShouldDraw.createHook((LPVOID)m_Game->m_Offsets->CHudCrosshair_ShouldDraw.address, &dCHudCrosshair_ShouldDraw);
+
+	//
 	hkClientThink.createHook((LPVOID)(m_Game->m_Offsets->ClientThink.address), &dClientThink);
 
 	return 1;
 } 
+
+bool __fastcall Hooks::dCHudCrosshair_ShouldDraw(void* ecx, void* edx) {
+	bool shouldDraw = hkCHudCrosshair_ShouldDraw.fOriginal(ecx);
+
+	m_VR->m_DrawCrosshair = shouldDraw;
+
+	return ((m_VR->m_AimMode == 1) ? shouldDraw : false);
+}
 
 void __fastcall Hooks::dPrecache(void* ecx, void* edx) {
 	hkPrecache.fOriginal(ecx);
@@ -310,7 +325,7 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 		Vector vec = position - m_VR->m_SetupOrigin;
 		float distance = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 
-		std::cout << "dRenderView: " << distance << "\n";
+		//std::cout << "dRenderView: " << distance << "\n";
 		
 		// Rudimentary portalling detection
 		if (distance > 35) {
@@ -346,8 +361,13 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	CViewSetup leftEyeView = setup;
 	CViewSetup rightEyeView = setup;
 
+	int playerIndex = m_Game->m_EngineClient->GetLocalPlayer();
+	C_BasePlayer* localPlayer = (C_BasePlayer*)m_Game->GetClientEntity(playerIndex);
+
 	// Left eye CViewSetup
-	leftEyeView.origin = m_VR->GetViewOriginLeft(position);
+	QAngle tempAngle = QAngle(setup.angles.x, setup.angles.y, setup.angles.z);
+	leftEyeView.origin = m_VR->TraceEye((uint32_t*)localPlayer, position, m_VR->GetViewOriginLeft(position), tempAngle);
+	leftEyeView.angles.y = tempAngle.y;
 
 	//std::cout << "dRenderView - Left Start\n";
 	IMatRenderContext* rndrContext = matSystem->GetRenderContext();
@@ -360,7 +380,9 @@ void __fastcall Hooks::dRenderView(void *ecx, void *edx, CViewSetup &setup, CVie
 	//std::cout << "dRenderView - Left End\n";
 
 	// Right eye CViewSetup
-	rightEyeView.origin = m_VR->GetViewOriginRight(position);
+	tempAngle = QAngle(setup.angles.x, setup.angles.y, setup.angles.z);
+	rightEyeView.origin = m_VR->TraceEye((uint32_t*)localPlayer, position, m_VR->GetViewOriginRight(position), tempAngle);
+	rightEyeView.angles.y = tempAngle.y;
 
 	//std::cout << "dRenderView - Right Start\n";
 	rndrContext = matSystem->GetRenderContext();
@@ -383,29 +405,65 @@ bool __fastcall Hooks::dCreateMove(void *ecx, void *edx, float flInputSampleTime
 	if (!cmd->command_number)
 		return hkCreateMove.fOriginal(ecx, flInputSampleTime, cmd);
 
-	if (m_VR->m_IsVREnabled  && m_VR->m_RoomscaleActive)
+	if (m_VR->m_IsVREnabled)
 	{
-		// How much have we moved since last CreateMove?
-		Vector setupOriginToHMD = (m_VR->m_HmdPosRelativeRaw - m_VR->m_HmdPosRelativeRawPrev) * m_VR->m_VRScale; //m_VR->m_HmdPosRelative - m_VR->m_HmdPosRelativePrev;
-		m_VR->m_HmdPosRelativeRawPrev = m_VR->m_HmdPosRelativeRaw;
+		cmd->viewangles = m_VR->m_HmdAngAbs;
 
-		setupOriginToHMD.z = 0;
-		float distance = VectorLength(setupOriginToHMD);
-		if (distance > 0)
+		vr::InputAnalogActionData_t analogActionData;
+		if (m_VR->GetAnalogActionData(m_VR->m_ActionWalk, analogActionData)) {
+			// Run toward other guy
+			cmd->buttons &= ~(IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT);
+
+			cmd->forwardmove += analogActionData.y * MAX_LINEAR_SPEED;
+			cmd->sidemove += analogActionData.x * MAX_LINEAR_SPEED;
+
+			// We'll only be moving fwd or sideways
+			cmd->upmove = 0.0f;
+
+			if (cmd->forwardmove > 0.0f)
+			{
+				cmd->buttons |= IN_FORWARD;
+			}
+			else if (cmd->forwardmove < 0.0f)
+			{
+				cmd->buttons |= IN_BACK;
+			}
+
+			if (cmd->sidemove > 0.0f)
+			{
+				cmd->buttons |= IN_MOVELEFT;
+			}
+			else if (cmd->sidemove < 0.0f)
+			{
+				cmd->buttons |= IN_MOVERIGHT;
+			}
+
+		}
+
+		if (m_VR->m_RoomscaleActive)
 		{
-			float forwardSpeed = DotProduct2D(setupOriginToHMD, m_VR->m_HmdForward);
-			float sideSpeed = DotProduct2D(setupOriginToHMD, m_VR->m_HmdRight);
-			cmd->forwardmove += distance * forwardSpeed;
-			cmd->sidemove += distance * sideSpeed;
+			// How much have we moved since last CreateMove?
+			Vector setupOriginToHMD = (m_VR->m_HmdPosRelativeRaw - m_VR->m_HmdPosRelativeRawPrev) * m_VR->m_VRScale; //m_VR->m_HmdPosRelative - m_VR->m_HmdPosRelativePrev;
+			m_VR->m_HmdPosRelativeRawPrev = m_VR->m_HmdPosRelativeRaw;
 
-			// Let's update the position and the previous too
-			/*m_VR->m_HmdPosRelative -= setupOriginToHMD;
-			m_VR->m_HmdPosRelativePrev = m_VR->m_HmdPosRelative;*/
+			setupOriginToHMD.z = 0;
+			float distance = VectorLength(setupOriginToHMD);
+			if (distance > 0)
+			{
+				float forwardSpeed = DotProduct2D(setupOriginToHMD, m_VR->m_HmdForward);
+				float sideSpeed = DotProduct2D(setupOriginToHMD, m_VR->m_HmdRight);
+				cmd->forwardmove += distance * forwardSpeed;
+				cmd->sidemove += distance * sideSpeed;
 
-			/*m_VR->m_Center += m_VR->m_HmdPosRelativeRaw - m_VR->m_HmdPosRelativeRawPrev;
-			m_VR->m_HmdPosRelativeRawPrev = m_VR->m_HmdPosRelativeRaw;*/
+				// Let's update the position and the previous too
+				/*m_VR->m_HmdPosRelative -= setupOriginToHMD;
+				m_VR->m_HmdPosRelativePrev = m_VR->m_HmdPosRelative;*/
 
-			//m_VR->ResetPosition();
+				/*m_VR->m_Center += m_VR->m_HmdPosRelativeRaw - m_VR->m_HmdPosRelativeRawPrev;
+				m_VR->m_HmdPosRelativeRawPrev = m_VR->m_HmdPosRelativeRaw;*/
+
+				//m_VR->ResetPosition();
+			}
 		}
 	}
 
@@ -529,16 +587,6 @@ int Hooks::dReadUsercmd(void *buf, CUserCmd *move, CUserCmd *from)
 	{
 		move->tick_count *= -1;
 
-		if (move->command_number < 0)
-		{
-			move->command_number *= -1;
-			m_Game->m_PlayersVRInfo[i].isMeleeing = true;
-		}
-		else
-		{
-			m_Game->m_PlayersVRInfo[i].isMeleeing = false;
-		}
-
 		m_Game->m_PlayersVRInfo[i].isUsingVR = true;
 		m_Game->m_PlayersVRInfo[i].controllerAngle.x = (float)move->mousedx / 10;
 		m_Game->m_PlayersVRInfo[i].controllerAngle.y = (float)move->mousedy / 10;
@@ -592,11 +640,6 @@ int Hooks::dWriteUsercmd(void *buf, CUserCmd *to, CUserCmd *from)
 		to->mousedy = controllerAngles.y * 10;
 		int rollEncoding = (((int)controllerAngles.z + 180) / 2 * 10000000);
 		to->command_number += rollEncoding;
-
-		if (VectorLength(m_VR->m_RightControllerPose.TrackedDeviceVel) > 1.1)
-		{
-			to->command_number *= -1; // Signal to server that melee swing in motion
-		}
 
 		Vector controllerPos = m_VR->GetRightControllerAbsPos();
 		to->viewangles.z = controllerPos.x;
@@ -673,13 +716,6 @@ int Hooks::dGetPrimaryAttackActivity(void *ecx, void *edx, void *meleeInfo)
 Vector *Hooks::dEyePosition(void *ecx, void *edx, Vector *eyePos)
 {
 	Vector *result = hkEyePosition.fOriginal(ecx, eyePos);
-
-	if (m_Game->m_PerformingMelee)
-	{
-		int i = m_Game->m_CurrentUsercmdID;
-		*result = m_Game->m_PlayersVRInfo[i].controllerPos;
-	}
-
 	return result;
 }
 
@@ -692,15 +728,10 @@ Vector* Hooks::dWeapon_ShootPosition(void* ecx, void* edx, Vector* eyePos)
 	return result;
 }
 
-
+// We'll keep this for... future reference!
 void Hooks::dDrawModelExecute(void *ecx, void *edx, void *state, const ModelRenderInfo_t &info, void *pCustomBoneToWorld)
 {
-	if (m_Game->m_SwitchedWeapons)
-		m_Game->m_CachedArmsModel = false;
-
-	bool hideArms = m_Game->m_IsMeleeWeaponActive || m_VR->m_HideArms;
-	
-	if (info.pModel && hideArms && !m_Game->m_CachedArmsModel)
+	if (info.pModel)
 	{
 		std::string modelName = m_Game->m_ModelInfo->GetModelName(info.pModel);
 		if (modelName.find("/arms/") != std::string::npos)
@@ -711,7 +742,7 @@ void Hooks::dDrawModelExecute(void *ecx, void *edx, void *state, const ModelRend
 		}
 	}
 
-	if (info.pModel && info.pModel == m_Game->m_ArmsModel && hideArms)
+	if (info.pModel && info.pModel == m_Game->m_ArmsModel)
 	{
 		m_Game->m_ArmsMaterial->SetMaterialVarFlag(MATERIAL_VAR_NO_DRAW, true);
 		m_Game->m_ModelRender->ForcedMaterialOverride(m_Game->m_ArmsMaterial);
@@ -822,7 +853,23 @@ bool __fastcall Hooks::dTraceFirePortal(void* ecx, void* edx, const Vector& vTra
 
 	}
 
-	return hkTraceFirePortal.fOriginal(ecx, vNewTraceStart, vNewDirection, bPortal2, iPlacedBy, tr);
+	bool bTraceSucceeded = hkTraceFirePortal.fOriginal(ecx, vNewTraceStart, vNewDirection, bPortal2, iPlacedBy, tr);
+
+	/*if (iPlacedBy == 2 && bTraceSucceeded) {
+		C_Portal_Player* pPortalPlayer = ecx + ;
+
+		if (pPortalPlayer) {
+			pPortalPlayer->m_PointLaser
+			if (bPortal2) {
+
+			}
+			else {
+
+			}
+		}
+	}*/
+
+	return bTraceSucceeded;
 }
 
 void __fastcall Hooks::dPlayerPortalled(void* ecx, void* edx, void* a2, __int64 a3)
@@ -872,7 +919,10 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 
 	//auto viewport = m_Game->m_ClientMode->GetViewport();
 
-	/*int newX = x;
+	if (m_VR->m_AimMode != 1)
+		return 0;
+
+	int newX = x;
 	int	newY = y;
 
 
@@ -896,8 +946,7 @@ int __fastcall Hooks::dDrawSelf(void* ecx, void* edx, int x, int y, int w, int h
 		newY = screen.y + offsetY;
 	}
 
-	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, flApparentZ);*/
-	return 0;
+	return hkDrawSelf.fOriginal(ecx, newX, newY, w, h, clr, flApparentZ);
 }
 
 void __cdecl Hooks::dVGui_GetHudBounds(int slot, int& x, int& y, int& w, int& h) {

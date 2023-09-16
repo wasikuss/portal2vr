@@ -132,6 +132,7 @@ public:
 	bool m_RenderedNewFrame = false;
 	bool m_RenderedHud = false;
 	bool m_CreatedVRTextures = false;
+	bool m_DrawCrosshair = false;
 	TextureID m_CreatingTextureID = Texture_None;
 
 	bool m_PressedTurn = false;
@@ -177,16 +178,17 @@ public:
 	bool m_OverrideEyeAngles = false;
 	std::chrono::steady_clock::time_point m_PrevFrameTime;
 
-	float m_TurnSpeed = 0.3;
+	float m_TurnSpeed = 0.15;
 	bool m_SnapTurning = false;
 	float m_SnapTurnAngle = 45.0;
 	bool m_LeftHanded = false;
 	float m_VRScale = 43.2;
 	float m_IpdScale = 1.0;
-	bool m_HideArms = false;
+	bool m_6DOF = true;
 	float m_HudDistance = 1.3;
-	float m_HudSize = 1.1;
+	float m_HudSize = 4.0;
 	bool m_HudAlwaysVisible = false;
+	int m_AimMode = 2;
 
 	VR() {};
 	VR(Game *game);
@@ -223,4 +225,5 @@ public:
 	void ParseConfigFile();
 	void WaitForConfigUpdate();
 	Vector Trace(uint32_t* localPlayer);
+	Vector TraceEye(uint32_t* localPlayer, Vector cameraPos, Vector eyePos, QAngle& eyeAngle);
 };

@@ -14,6 +14,8 @@ class ModelRenderInfo_t;
 struct trace_tx;
 class IMatRenderContext;
 struct vrect_t;
+struct Ray_t;
+struct VMatrix;
 
 template <typename T>
 struct Hook {
@@ -123,6 +125,12 @@ typedef void(__thiscall* tClientThink)(void* thisptr);
 typedef void*(__cdecl* tGetPortalPlayer)(int index);
 typedef int(__cdecl* tPrecacheParticleSystem)(const char* pParticleSystemName);
 typedef void(__thiscall* tPrecache)(void* thisptr);
+typedef bool(__thiscall* tCHudCrosshair_ShouldDraw)(void* thisptr);
+
+typedef void*(__cdecl* tUTIL_Portal_FirstAlongRay)(const Ray_t& ray, float& fMustBeCloserThan);
+typedef float(__cdecl* tUTIL_IntersectRayWithPortal)(const Ray_t& ray, const void* pPortal);
+typedef void(__cdecl* tUTIL_Portal_AngleTransform)(const VMatrix& matThisToLinked, const QAngle& qSource, QAngle& qTransformed);
+
 
 class Hooks
 {
@@ -179,7 +187,6 @@ public:
 	static inline Hook<tEyeAngles> hkEyeAngles;
 
 	static inline Hook<tMatrixBuildPerspectiveX> hkMatrixBuildPerspectiveX;
-
 	
 	static inline Hook<tGetDefaultFOV> hkGetDefaultFOV;
 	static inline Hook<tGetFOV> hkGetFOV;
@@ -188,6 +195,8 @@ public:
 	static inline Hook<tSetDrawOnlyForSplitScreenUser> hkSetDrawOnlyForSplitScreenUser;
 	static inline Hook<tClientThink> hkClientThink;
 	static inline Hook<tPrecache> hkPrecache;
+	static inline Hook<tCHudCrosshair_ShouldDraw> hkCHudCrosshair_ShouldDraw;
+	
 	//Precache
 
 	Hooks() {};
@@ -270,6 +279,7 @@ public:
 	static void __fastcall dSetDrawOnlyForSplitScreenUser(void* ecx, void* edx, int nSlot);
 	static void __fastcall dClientThink(void* ecx, void* edx);
 	static void __fastcall dPrecache(void* ecx, void* edx);
+	static bool __fastcall dCHudCrosshair_ShouldDraw(void* ecx, void* edx);
 	
 	static inline int m_PushHUDStep;
 	static inline bool m_PushedHud;
@@ -277,4 +287,9 @@ public:
 	static inline tCreatePingPointer CreatePingPointer;
 	static inline tGetPortalPlayer GetPortalPlayer;
 	static inline tPrecacheParticleSystem PrecacheParticleSystem;
+
+	static inline tUTIL_Portal_FirstAlongRay UTIL_Portal_FirstAlongRay;
+	static inline tUTIL_IntersectRayWithPortal UTIL_IntersectRayWithPortal;
+	static inline tUTIL_Portal_AngleTransform UTIL_Portal_AngleTransform;
+	
 };

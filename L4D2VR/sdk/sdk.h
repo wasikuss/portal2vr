@@ -11,6 +11,35 @@
 #include "worldsize.h"
 #include <unordered_map>
 
+#define IN_ATTACK		(1 << 0)
+#define IN_JUMP			(1 << 1)
+#define IN_DUCK			(1 << 2)
+#define IN_FORWARD		(1 << 3)
+#define IN_BACK			(1 << 4)
+#define IN_USE			(1 << 5)
+#define IN_CANCEL		(1 << 6)
+#define IN_LEFT			(1 << 7)
+#define IN_RIGHT		(1 << 8)
+#define IN_MOVELEFT		(1 << 9)
+#define IN_MOVERIGHT	(1 << 10)
+#define IN_ATTACK2		(1 << 11)
+#define IN_RUN			(1 << 12)
+#define IN_RELOAD		(1 << 13)
+#define IN_ALT1			(1 << 14)
+#define IN_ALT2			(1 << 15)
+#define IN_SCORE		(1 << 16)   // Used by client.dll for when scoreboard is held down
+#define IN_SPEED		(1 << 17)	// Player is holding the speed key
+#define IN_WALK			(1 << 18)	// Player holding walk key
+#define IN_ZOOM			(1 << 19)	// Zoom key for HUD zoom
+#define IN_WEAPON1		(1 << 20)	// weapon defines these bits
+#define IN_WEAPON2		(1 << 21)	// weapon defines these bits
+#define IN_BULLRUSH		(1 << 22)
+#define IN_GRENADE1		(1 << 23)	// grenade 1
+#define IN_GRENADE2		(1 << 24)	// grenade 2
+#define	IN_LOOKSPIN		(1 << 25)
+
+#define MAX_LINEAR_SPEED 175
+
 class C_BaseCombatWeapon;
 class C_WeaponCSBase;
 
@@ -1597,89 +1626,6 @@ public:
 
 	int padding_0[826];
 	int m_MapBasedMeleeID;
-
-	static inline std::unordered_map<WeaponID, PositionAngle> viewmodelOffsets
-	{
-		{ NONE,				{{20,3,0}, {0,0,0}} },
-		{ PISTOL,			{{20.5, 5, -2}, {-1, 0, 0}} },
-		{ UZI,				{{22.5, 5, -4}, {-1.5, 0, 1}} },
-		{ PUMPSHOTGUN,		{{14.5, 3.5, -1.5}, {-0.5, 0, 0}} },
-		{ AUTOSHOTGUN,		{{14.5, 3.5, -4}, {-1.5, -2, 0}} },
-		{ M16A1,			{{18, 5.5, -5.5}, {-1.5, -2, 0}} },
-		{ HUNTING_RIFLE,	{{15, 4, -4}, {-4.5, -5, 0}} },
-		{ MAC10,			{{22.5, 4.5, -3.5}, {-2, 0, 1}} },
-		{ SHOTGUN_CHROME,	{{14.5, 4, -2.5}, {-1.5, -1, 0}} },
-		{ SCAR,				{{18, 5.5, -5.5}, {-1.5, 0, -1}} },
-		{ SNIPER_MILITARY,  {{18.5, 5, -5}, {0, -1.5, 0}} },
-		{ SPAS,				{{16, 5, -4.5}, {-1.5, -2, 0}} },
-		{ AK47,				{{17.5, 5.5, -4.5}, {-0.5, 0, 0}} },
-		{ MAGNUM,			{{22, 5, -2.5}, {-0.5, 0, 0}} },
-		{ MP5,				{{18.5, 4, -4.5}, {-0.5, 0, 0}} },
-		{ SG552,			{{20, 5.5, -4.5}, {-0.5, 0, 0}} },
-		{ AWP,				{{21, 5.5, -5.5}, {-0.5, 0, 0}} },
-		{ SCOUT,			{{19.5, 5, -3.5}, {-0.5, 0, 0}} },
-		{ M60,				{{19, 5.5, -7}, {0, 0, 0}} },
-		{ GRENADE_LAUNCHER, {{14, 5, -2}, {-1, 0, 0}} }
-	};
-
-	static inline std::unordered_map<std::string, PositionAngle> meleeViewmodelOffsets
-	{
-		{ "fireaxe",		 {{12.5, -4, -21.5}, {-12, -6.5, -44.5}}},
-		{ "katana",			 {{19, 6, -4}, {-10.5, -18, -29}}},
-		{ "electric_guitar", {{20.5, 4, -11}, {-29, -11.5, -36.5}}},
-		{ "baseball_bat",	 {{18.5, 4.5, -5.5}, {-58.5, -9, -25}}},
-		{ "knife",			 {{29, 7, -2.5}, {-26, -19.5, -33.5}}},
-		{ "golfclub",		 {{10.5, 2, -19.5}, {-8.5, -19, -34.5}}},
-		{ "crowbar",		 {{19.5, 6, -13.5}, {-24.5, -6.5, -6}}},
-		{ "cricket_bat",	 {{19.5, 4, -5.5}, {-63, -18, -33}}},
-		{ "machete",		 {{23.5, 6, -3.5}, {-51, -11.5, -.5}}},
-		{ "tonfa",			 {{20, 6.5, -.5}, {-54, -11.5, -23.5}}},
-		{ "frying_pan",		 {{22.5, 8.5, -7}, {-12, -1.5, -41.5}}},
-		{ "electric_guitar", {{22, 3.5, -14}, {-2, 12, -16.5}}},
-		{ "shovel",			 {{17, -6.5, -11}, {-17.5, -1.5, -70.5}}},
-		{ "pitchfork",		 {{12.5, 4, -9.5}, {40, 9, -3.5}}}
-	};
-
-	static inline C_WeaponCSBase *prevWep;
-	static inline WeaponID prevWeaponID;
-	static inline PositionAngle prevViewmodelOffset;
-
-	PositionAngle GetViewmodelOffset()
-	{
-		WeaponID id = GetWeaponID();
-
-		if (this == prevWep && id == prevWeaponID)
-		{
-			g_Game->m_SwitchedWeapons = false;
-			return prevViewmodelOffset;
-		}
-
-		g_Game->m_SwitchedWeapons = true;
-		prevWep = this;
-		prevWeaponID = id;
-
-		/*if (id == MELEE)
-		{
-			typedef CMeleeWeaponInfoStore *(__thiscall *tGetMeleeWepInfo)(void *thisptr);
-			static tGetMeleeWepInfo oGetMeleeWepInfo = (tGetMeleeWepInfo)(g_Game->m_Offsets->GetMeleeWeaponInfoClient.address);
-			CMeleeWeaponInfoStore *meleeWepInfo = oGetMeleeWepInfo(this);
-
-			std::string wepName(meleeWepInfo->meleeWeaponName);
-
-			if (meleeViewmodelOffsets.find(wepName) != meleeViewmodelOffsets.end())
-			{
-				prevViewmodelOffset = meleeViewmodelOffsets[wepName];
-				return prevViewmodelOffset;
-			}
-		}*/
-
-		if (viewmodelOffsets.find(id) != viewmodelOffsets.end())
-			prevViewmodelOffset = viewmodelOffsets[id];
-		else
-			prevViewmodelOffset = viewmodelOffsets[NONE];
-		
-		return prevViewmodelOffset;
-	}
 };
 
 class C_BasePlayer : public C_BaseCombatCharacter
@@ -1779,15 +1725,6 @@ public:
 	virtual void *sub_10069A10() = 0;
 	virtual void *sub_10069A20() = 0;
 	virtual void *sub_10069A30() = 0;
-
-	PositionAngle GetViewmodelOffset()
-	{
-		C_WeaponCSBase *weapon = (C_WeaponCSBase *)GetActiveWeapon();
-		if (!weapon)
-			return PositionAngle{ {0,0,0}, {0,0,0} };
-
-		return weapon->GetViewmodelOffset();
-	}
 
 	bool IsMeleeWeaponActive()
 	{
@@ -2180,10 +2117,28 @@ public:
 	virtual void ResetFontCaches() = 0;
 	virtual bool IsScreenSizeOverrideActive() = 0;
 };
+/*
+		typedef Server_WeaponCSBase *(__thiscall *tGetActiveWep)(void *thisptr);
+		static tGetActiveWep oGetActiveWep = (tGetActiveWep)(m_Game->m_Offsets->GetActiveWeapon.address);
+		Server_WeaponCSBase *curWep = oGetActiveWep(pPlayer);
+*/
+class CWeaponPortalBase
+{
+public:
+	char pad_0000[3740]; //0000
+	int m_iLastFiredPortal; //0xE9C
+};
 
 class C_Portal_Player
 {
 public:
+	inline CWeaponPortalBase* GetActivePortalWeapon() {
+		typedef CWeaponPortalBase* (__thiscall* tGetActivePortalWeapon)(void* thisptr);
+		static tGetActivePortalWeapon oGetActivePortalWeapon = (tGetActivePortalWeapon)(g_Game->m_Offsets->GetActivePortalWeapon.address);
+
+		return oGetActivePortalWeapon(this);
+	};
+
 	char pad_0000[9152]; //0000
 	CNewParticleEffect* m_PointLaser; //0x23C0
 };

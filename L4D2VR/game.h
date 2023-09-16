@@ -33,41 +33,39 @@ struct Player
     bool isUsingVR;
     QAngle controllerAngle;
     Vector controllerPos;
-    bool isMeleeing;
-    bool isNewSwing;
     QAngle prevControllerAngle;
 
     Player()
         : isUsingVR(false),
         controllerAngle({ 0,0,0 }),
         controllerPos({ 0,0,0 }),
-        isMeleeing(false),
-        isNewSwing(false),
         prevControllerAngle({ 0,0,0 })
     {}
 };
 
-class Game 
+class Game
 {
 public:
-    IClientEntityList *m_ClientEntityList = nullptr;
-    IEngineTrace *m_EngineTrace = nullptr;
-    IEngineClient *m_EngineClient = nullptr;
-    IMaterialSystem *m_MaterialSystem = nullptr;
-    IBaseClientDLL *m_BaseClientDll = nullptr;
-    IViewRender *m_ClientViewRender = nullptr;
-    IViewRender *m_EngineViewRender = nullptr;
-    IModelInfo *m_ModelInfo = nullptr;
-    IModelRender *m_ModelRender = nullptr;
-    IInput *m_VguiInput = nullptr;
-    ISurface *m_VguiSurface = nullptr;
-    IClientMode *m_ClientMode = nullptr;
+    IClientEntityList* m_ClientEntityList = nullptr;
+    IEngineTrace* m_EngineTrace = nullptr;
+    IEngineClient* m_EngineClient = nullptr;
+    IMaterialSystem* m_MaterialSystem = nullptr;
+    IBaseClientDLL* m_BaseClientDll = nullptr;
+    IViewRender* m_ClientViewRender = nullptr;
+    IViewRender* m_EngineViewRender = nullptr;
+    IModelInfo* m_ModelInfo = nullptr;
+    IModelRender* m_ModelRender = nullptr;
+    IInput* m_VguiInput = nullptr;
+    ISurface* m_VguiSurface = nullptr;
+    IClientMode* m_ClientMode = nullptr;
 
     uintptr_t m_BaseEngine;
     uintptr_t m_BaseClient;
     uintptr_t m_BaseServer;
     uintptr_t m_BaseMaterialSystem;
     uintptr_t m_BaseVgui2;
+
+    Vector m_singlePlayerPortalColors[3] = { Vector(255.0f, 255.0f, 255.0f), Vector(64.0f, 160.0f, 255.0f), Vector(255.0f, 160.0f, 32.0f) };
 
     Offsets *m_Offsets = nullptr;
     VR *m_VR = nullptr;
@@ -77,14 +75,10 @@ public:
 
     std::array<Player, 24> m_PlayersVRInfo;
     int m_CurrentUsercmdID = -1;
-    bool m_PerformingMelee = false;
 
     model_t *m_ArmsModel = nullptr;
     IMaterial *m_ArmsMaterial = nullptr;
     bool m_CachedArmsModel = false;
-
-    bool m_IsMeleeWeaponActive = false;
-    bool m_SwitchedWeapons = false;
 
     Game();
 

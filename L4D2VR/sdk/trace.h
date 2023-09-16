@@ -117,7 +117,7 @@ public:
 	bool DidHitWorld() const;
 	bool DidHitNonWorldEntity() const;
 	int GetEntityIndex() const;
-	bool DidHit() const;
+	inline bool DidHit() const { return fraction < 1 || allsolid || startsolid; };
 	// bool isVisible() const;
 	// The engine doesn't know what a CBaseEntity is, so it has a backdoor to 
 	// let it get at the edict.
