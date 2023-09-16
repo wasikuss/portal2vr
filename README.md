@@ -8,7 +8,7 @@
 # ![Portal 2 icon](imgs/icon.jpg "Portal 2 icon") Portal 2 VR
 ### Use this mod at your own risk of getting VAC banned. Use the -insecure launch option to help protect yourself. (Also contains lots of flashing lights)
 
-#### [Video demo](https://www.youtube.com/watch?v=zU-8-9qe6wQ)
+#### [Video demo](https://www.youtube.com/watch?)
 
 ## Things that work
 * Singleplayer
@@ -29,7 +29,7 @@
    ``` -insecure -window -novid +mat_motion_blur_percent_of_screen_max 0 +mat_queue_mode 0 +mat_vsync 0 +mat_antialias 0 +mat_grain_scale_override 0 -width 1280 -height 720 ```
 
 3. At the menu, feel free to change [these video settings](https://i.imgur.com/yYQMXs6.jpg).
-4. Load into a campaign. 
+4. Load into a chapter. 
 5. To recenter the camera height, press down on the left stick. To see the HUD, aim the controller up or down.
 
 ## Troubleshooting
