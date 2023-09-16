@@ -863,6 +863,11 @@ QAngle VR::GetRightControllerAbsAngle()
     return m_RightControllerAngAbs;
 }
 
+QAngle& VR::GetRightControllerAbsAngleConst()
+{
+    return m_RightControllerAngAbs;
+}
+
 Vector VR::GetRightControllerAbsPos(Vector eyePosition)
 {
     Vector offset = eyePosition;
@@ -916,6 +921,9 @@ void VR::UpdateHMDAngles() {
     //hmdAngLocal.Normalize();
 
     QAngle::AngleVectors(hmdAngLocal, &m_HmdForward, &m_HmdRight, &m_HmdUp);
+
+    //hmdAngLocal.x = (hmdAngLocal.x > 180 ? 180)
+    hmdAngLocal.Normalize();
 
     m_HmdAngAbs = hmdAngLocal;
 }
@@ -1060,6 +1068,7 @@ void VR::UpdateTracking()
     // controller angles
     QAngle::VectorAngles(m_LeftControllerForward, m_LeftControllerUp, m_LeftControllerAngAbs);
     QAngle::VectorAngles(m_RightControllerForward, m_RightControllerUp, m_RightControllerAngAbs);
+    m_RightControllerAngAbs.Normalize();
 
     PositionAngle viewmodelOffset = PositionAngle{ {4.5, -1, 1.5}, {0,0,0} };
 

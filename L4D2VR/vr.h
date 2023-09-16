@@ -209,6 +209,7 @@ public:
 	vr::HmdMatrix34_t GetControllerTipMatrix(vr::ETrackedControllerRole controllerRole);
 	bool CheckOverlayIntersectionForController(vr::VROverlayHandle_t overlayHandle, vr::ETrackedControllerRole controllerRole);
 	QAngle GetRightControllerAbsAngle();
+	QAngle& GetRightControllerAbsAngleConst();
 	Vector GetRightControllerAbsPos(Vector eyePosition = {0, 0, 0});
 	Vector GetRecommendedViewmodelAbsPos(Vector eyePosition);
 	QAngle GetRecommendedViewmodelAbsAngle();

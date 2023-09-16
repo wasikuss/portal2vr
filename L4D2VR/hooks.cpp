@@ -71,7 +71,7 @@ Hooks::Hooks(Game *game)
 	//hkComputeError.enableHook();
 	hkUpdateObject.enableHook();
 	hkUpdateObjectVM.enableHook();
-	hkRotateObject.enableHook();
+	//hkRotateObject.enableHook();
 	hkEyeAngles.enableHook();
 
 	hkGetDefaultFOV.enableHook();
@@ -582,7 +582,7 @@ int Hooks::dReadUsercmd(void *buf, CUserCmd *move, CUserCmd *from)
 {
 	hkReadUsercmd.fOriginal(buf, move, from);
 
-	int i = m_Game->m_CurrentUsercmdID;
+	/*int i = m_Game->m_CurrentUsercmdID;
 	if (move->tick_count < 0) // Signal for VR CUserCmd
 	{
 		move->tick_count *= -1;
@@ -613,7 +613,7 @@ int Hooks::dReadUsercmd(void *buf, CUserCmd *move, CUserCmd *from)
 	else
 	{
 		m_Game->m_PlayersVRInfo[i].isUsingVR = false;
-	}
+	}*/
 	return 1;
 }
 
@@ -626,7 +626,7 @@ int Hooks::dWriteUsercmd(void *buf, CUserCmd *to, CUserCmd *from)
 {
 	if (m_VR->m_IsVREnabled)
 	{
-		CInput *m_Input = **(CInput ***)(m_Game->m_Offsets->g_pppInput.address);
+		/*CInput *m_Input = **(CInput ***)(m_Game->m_Offsets->g_pppInput.address);
 		CVerifiedUserCmd *pVerifiedCommands = *(CVerifiedUserCmd **)((uintptr_t)m_Input + 0xF0);
 		CVerifiedUserCmd *pVerified = &pVerifiedCommands[(to->command_number) % 150];
 
@@ -659,13 +659,13 @@ int Hooks::dWriteUsercmd(void *buf, CUserCmd *to, CUserCmd *from)
 		to->tick_count *= -1;
 		to->viewangles.z = 0;
 		to->upmove = 0;
-		to->command_number = originalCommandNum;
+		to->command_number = originalCommandNum;*/
 
 		// Must recalculate checksum for the edited CUserCmd or gunshots will sound
 		// terrible in multiplayer.
 		/*pVerified->m_cmd = *to;
 		pVerified->m_crc = to->GetChecksum();*/
-		return 1;
+		//return 1;
 	}
 	return hkWriteUsercmd.fOriginal(buf, to, from);
 }
@@ -1074,14 +1074,14 @@ void __fastcall Hooks::dRotateObject(void* ecx, void* edx, void* pPlayer, float 
 }
 
 // This is CPlayerBase, do we also need to hook CPortalPlayer? can the same function be used by both?
+// This works for release, but why was it crashing before??? TODO: buy a c++ book...
 QAngle& __fastcall Hooks::dEyeAngles(void* ecx, void* edx) {
-	QAngle eyeAngles = hkEyeAngles.fOriginal(ecx);
-
 	if (m_VR->m_OverrideEyeAngles) {
-		eyeAngles = m_VR->GetRightControllerAbsAngle();
+		return m_VR->GetRightControllerAbsAngleConst();
 	}
-
-	return eyeAngles;
+	else {
+		return hkEyeAngles.fOriginal(ecx);
+	}
 }
 
 void Hooks::dMatrixBuildPerspectiveX(void*& dst, double flFovX, double flAspect, double flZNear, double flZFar) {

@@ -1059,8 +1059,15 @@ inline bool QAngle::operator!=(const QAngle& src) const
 	return res;
 }*/
 
-/*inline float AngleNormalize(float angle) {
-	return 360 * std::floor((angle + 180) / 360);
+inline float AngleNormalize(float angle) {
+	//return 360 * std::floor((angle + 180) / 360)
+
+	if (angle > 180)
+		return angle - 360;
+	else if (angle < -180)
+		return angle + 360;
+
+	return angle;
 }
 
 inline void QAngle::Normalize()
@@ -1068,7 +1075,7 @@ inline void QAngle::Normalize()
 	this->x = AngleNormalize(this->x);
 	this->y = AngleNormalize(this->y);
 	this->z = AngleNormalize(this->z);
-}*/
+}
 
 inline void QAngle::AngleVectors(const QAngle &angles, Vector *forward, Vector *right, Vector *up)
 {
