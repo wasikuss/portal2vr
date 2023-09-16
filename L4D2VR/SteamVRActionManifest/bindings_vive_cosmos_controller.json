@@ -75,7 +75,7 @@
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/left/input/grip"
+               "path" : "/user/hand/left/input/trigger"
             },
             {
                "inputs" : {
@@ -202,7 +202,7 @@
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/right/input/grip"
+               "path" : "/user/hand/left/input/grip"
             },
             {
                "inputs" : {
@@ -211,7 +211,7 @@
                   }
                },
                "mode" : "button",
-               "path" : "/user/hand/left/input/trigger"
+               "path" : "/user/hand/right/input/grip"
             }
          ]
       }
@@ -219,7 +219,7 @@
    "category" : "steamvr_input",
    "controller_type" : "vive_cosmos_controller",
    "description" : "",
-   "name" : "Default Left 4 Dead 2 VR bindings for Vive Cosmos Controllers",
+   "name" : "Portal 2 VR bindings for Vive Cosmos Controllers",
    "options" : {},
    "simulated_actions" : []
 }
