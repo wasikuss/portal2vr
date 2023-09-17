@@ -485,6 +485,7 @@ void VR::ProcessMenuInput()
         vr::VREvent_t vrEvent;
         while (vr::VROverlay()->PollNextOverlayEvent(currentOverlay, &vrEvent, sizeof(vrEvent)))
         {
+            INPUT input;
             switch (vrEvent.eventType)
             {
             case vr::VREvent_MouseMove:
@@ -510,13 +511,23 @@ void VR::ProcessMenuInput()
                 // Don't allow holding down the mouse down in the pause menu. The resume button can be clicked before
                 // the MouseButtonUp event is polled, which causes issues with the overlay.
                 if (currentOverlay == m_MainMenuHandle)
-                    m_Game->m_VguiInput->InternalMousePressed(ButtonCode_t::MOUSE_LEFT);
+                {
+                    input.type = INPUT_MOUSE;
+                    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+                    SendInput(1, &input, sizeof(INPUT));
+                }
                 break;
 
             case vr::VREvent_MouseButtonUp:
                 if (currentOverlay == m_HUDHandle)
-                    m_Game->m_VguiInput->InternalMousePressed(ButtonCode_t::MOUSE_LEFT);
-                m_Game->m_VguiInput->InternalMouseReleased(ButtonCode_t::MOUSE_LEFT);
+                {
+                    input.type = INPUT_MOUSE;
+                    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
+                    SendInput(1, &input, sizeof(INPUT));
+                }
+                input.type = INPUT_MOUSE;
+                input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
+                SendInput(1, &input, sizeof(INPUT));
                 break;
 
             case vr::VREvent_ScrollDiscrete:
@@ -531,39 +542,57 @@ void VR::ProcessMenuInput()
         
         if (PressedDigitalAction(m_MenuSelect, true))
         {
-            m_Game->m_VguiInput->InternalKeyCodeTyped(ButtonCode_t::KEY_SPACE);
-            m_Game->m_VguiInput->InternalKeyCodePressed(ButtonCode_t::KEY_SPACE);
-            m_Game->m_VguiInput->InternalKeyCodeReleased(ButtonCode_t::KEY_SPACE);
+            INPUT input {};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_RETURN;
+            SendInput(1, &input, sizeof(INPUT));
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
         }
         if (PressedDigitalAction(m_MenuBack, true) || PressedDigitalAction(m_Pause, true))
         {
-            m_Game->m_VguiInput->InternalKeyCodeTyped(ButtonCode_t::KEY_ESCAPE);
-            m_Game->m_VguiInput->InternalKeyCodePressed(ButtonCode_t::KEY_ESCAPE);
-            m_Game->m_VguiInput->InternalKeyCodeReleased(ButtonCode_t::KEY_ESCAPE);
+            INPUT input {};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_ESCAPE;
+            SendInput(1, &input, sizeof(INPUT));
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
         }
         if (PressedDigitalAction(m_MenuUp, true))
         {
-            m_Game->m_VguiInput->InternalKeyCodeTyped(ButtonCode_t::KEY_UP);
-            m_Game->m_VguiInput->InternalKeyCodePressed(ButtonCode_t::KEY_UP);
-            m_Game->m_VguiInput->InternalKeyCodeReleased(ButtonCode_t::KEY_UP);
+            INPUT input {};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_UP;
+            SendInput(1, &input, sizeof(INPUT));
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
         }
         if (PressedDigitalAction(m_MenuDown, true))
         {
-            m_Game->m_VguiInput->InternalKeyCodeTyped(ButtonCode_t::KEY_DOWN);
-            m_Game->m_VguiInput->InternalKeyCodePressed(ButtonCode_t::KEY_DOWN);
-            m_Game->m_VguiInput->InternalKeyCodeReleased(ButtonCode_t::KEY_DOWN);
+            INPUT input {};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_DOWN;
+            SendInput(1, &input, sizeof(INPUT));
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
         }
         if (PressedDigitalAction(m_MenuLeft, true))
         {
-            m_Game->m_VguiInput->InternalKeyCodeTyped(ButtonCode_t::KEY_LEFT);
-            m_Game->m_VguiInput->InternalKeyCodePressed(ButtonCode_t::KEY_LEFT);
-            m_Game->m_VguiInput->InternalKeyCodeReleased(ButtonCode_t::KEY_LEFT);
+            INPUT input {};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_LEFT;
+            SendInput(1, &input, sizeof(INPUT));
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
         }
         if (PressedDigitalAction(m_MenuRight, true))
         {
-            m_Game->m_VguiInput->InternalKeyCodeTyped(ButtonCode_t::KEY_RIGHT);
-            m_Game->m_VguiInput->InternalKeyCodePressed(ButtonCode_t::KEY_RIGHT);
-            m_Game->m_VguiInput->InternalKeyCodeReleased(ButtonCode_t::KEY_RIGHT);
+            INPUT input {};
+            input.type = INPUT_KEYBOARD;
+            input.ki.wVk = VK_RIGHT;
+            SendInput(1, &input, sizeof(INPUT));
+            input.ki.dwFlags = KEYEVENTF_KEYUP;
+            SendInput(1, &input, sizeof(INPUT));
         }
     }
 }
