@@ -6,9 +6,12 @@
 </div>
 
 # ![Portal 2 icon](imgs/icon.jpg "Portal 2 icon") Portal 2 VR
-### Use this mod at your own risk of getting VAC banned. Use the -insecure launch option to help protect yourself. (Also contains lots of flashing lights)
+### ~~Use this mod at your own risk of getting VAC banned. Use the -insecure launch option to help protect yourself.~~
+### Apparently Portal 2 doesn't have VAC, but just to be safe you should still run the game with the `insecure` flag.
+This game contains flashing lights and fast motion sequences.
 
-#### [Video demo](https://www.youtube.com/watch?)
+## Portal 2 VR Mod First 20 Minutes (Youtube Video)
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/nQZ601kEDFI/0.jpg)](https://www.youtube.com/watch?v=nQZ601kEDFI)
 
 ## Things that work
 * Singleplayer
@@ -54,7 +57,7 @@ If the game is crashing, try:
 3. Set to x86 Debug or Release
 4. Build -> Build Solution
 
-Note: After building, it will attempt to copy the new d3d9.dll to your L4D2 directory.
+Note: After building, it will attempt to copy the new d3d9.dll to your Portal 2/bin directory.
 
 ## Based on
 * [l4d2vr](https://github.com/sd805/l4d2vr)
@@ -64,3 +67,7 @@ Note: After building, it will attempt to copy the new d3d9.dll to your L4D2 dire
 * [gmcl_openvr](https://github.com/Planimeter/gmcl_openvr/)
 * [dxvk](https://github.com/TheIronWolfModding/dxvk/tree/vr-dx9-rel)
 * [source-sdk-2013](https://github.com/ValveSoftware/source-sdk-2013/)
+
+## Support me
+<a href="https://www.paypal.com/donate/?business=YL7TGWKPCC9H8&no_recurring=0&currency_code=USD"><img src="https://pics.paypal.com/00/s/MDAwNDljNmUtZWZiZS00ZTI1LWFiMTMtZTdhZmQ5NmU5ZDUx/file.PNG" alt="Donate Button" style="width:auto;height:100px;"></a>
+
