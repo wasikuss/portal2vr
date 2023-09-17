@@ -254,11 +254,29 @@ void VR::SubmitVRTextures()
         if (!vr::VROverlay()->IsOverlayVisible(m_MainMenuHandle))
             RepositionOverlays();
 
+        vr::VRTextureBounds_t bounds{ 0, 0, 1, 1 };
+        if (m_Game->m_EngineClient->IsInGame())
+        {
+            // menu only renders to the window portion of the texture. Until we figure out a proper fix,
+            // as a workaround only show that portion of the texture
+            int windowWidth, windowHeight;
+            IMatRenderContext* rndrContext = m_Game->m_MaterialSystem->GetRenderContext();
+            rndrContext->GetWindowSize(windowWidth, windowHeight);
+            rndrContext->Release();
+
+            bounds.uMax = (float)windowWidth / m_RenderWidth;
+            bounds.vMax = (float)windowHeight / m_RenderHeight;
+            vr::VROverlay()->SetOverlayTexelAspect(m_MainMenuHandle, bounds.vMax / bounds.uMax);
+        }
+        else
+            vr::VROverlay()->SetOverlayTexelAspect(m_MainMenuHandle, 1.0f);
+
+        vr::VROverlay()->SetOverlayTextureBounds(m_MainMenuHandle, &bounds);
         vr::VROverlay()->SetOverlayTexture(m_MainMenuHandle, &m_VKBackBuffer.m_VRTexture);
         vr::VROverlay()->ShowOverlay(m_MainMenuHandle);
         vr::VROverlay()->HideOverlay(m_HUDHandle);
 
-        if (!m_Game->m_EngineClient->IsInGame())
+        //if (!m_Game->m_EngineClient->IsInGame())
         {
             vr::VRCompositor()->Submit(vr::Eye_Left, &m_VKBlankTexture.m_VRTexture, NULL, vr::Submit_Default);
             vr::VRCompositor()->Submit(vr::Eye_Right, &m_VKBlankTexture.m_VRTexture, NULL, vr::Submit_Default);
