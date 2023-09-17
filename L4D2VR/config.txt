@@ -9,3 +9,4 @@ HudDistance=1.3
 HudSize=4.0
 HudAlwaysVisible=false
 AimMode=2
+AntiAliasing=0
