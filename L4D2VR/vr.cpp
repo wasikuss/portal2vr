@@ -81,19 +81,20 @@ VR::VR(Game *game)
     g_D3DVR9->GetBackBufferData(&m_VKBackBuffer);
     m_Overlay = vr::VROverlay();
     m_Overlay->CreateOverlay("MenuOverlayKey", "MenuOverlay", &m_MainMenuHandle);
-    m_Overlay->CreateOverlay("HUDOverlayKey", "HUDOverlay", &m_HUDHandle);
+    //m_Overlay->CreateOverlay("HUDOverlayKey", "HUDOverlay", &m_HUDHandle);
     m_Overlay->SetOverlayInputMethod(m_MainMenuHandle, vr::VROverlayInputMethod_Mouse);
-    m_Overlay->SetOverlayInputMethod(m_HUDHandle, vr::VROverlayInputMethod_Mouse);
+   // m_Overlay->SetOverlayInputMethod(m_HUDHandle, vr::VROverlayInputMethod_Mouse);
     m_Overlay->SetOverlayFlag(m_MainMenuHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
-    m_Overlay->SetOverlayFlag(m_HUDHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
+    //m_Overlay->SetOverlayFlag(m_HUDHandle, vr::VROverlayFlags_SendVRDiscreteScrollEvents, true);
 
     int windowWidth, windowHeight;
     m_Game->m_MaterialSystem->GetRenderContext()->GetWindowSize(windowWidth, windowHeight);
 
-    const vr::HmdVector2_t mouseScaleHUD = {windowWidth, windowHeight};
-    m_Overlay->SetOverlayMouseScale(m_HUDHandle, &mouseScaleHUD);
+    //const vr::HmdVector2_t mouseScaleHUD = {windowWidth, windowHeight};
+    //m_Overlay->SetOverlayMouseScale(m_HUDHandle, &mouseScaleHUD);
 
     const vr::HmdVector2_t mouseScaleMenu = {m_RenderWidth, m_RenderHeight};
+    m_Overlay->SetOverlayCurvature(m_MainMenuHandle, 0.15f);
     m_Overlay->SetOverlayMouseScale(m_MainMenuHandle, &mouseScaleMenu);
 
     UpdatePosesAndActions();
@@ -276,7 +277,7 @@ void VR::SubmitVRTextures()
         vr::VROverlay()->SetOverlayTextureBounds(m_MainMenuHandle, &bounds);
         vr::VROverlay()->SetOverlayTexture(m_MainMenuHandle, &m_VKBackBuffer.m_VRTexture);
         vr::VROverlay()->ShowOverlay(m_MainMenuHandle);
-        vr::VROverlay()->HideOverlay(m_HUDHandle);
+        //vr::VROverlay()->HideOverlay(m_HUDHandle);
 
         //if (!m_Game->m_EngineClient->IsInGame())
         {
@@ -288,12 +289,12 @@ void VR::SubmitVRTextures()
     }
     vr::VROverlay()->HideOverlay(m_MainMenuHandle);
 
-    vr::VROverlay()->SetOverlayTexture(m_HUDHandle, &m_VKHUD.m_VRTexture);
+    //vr::VROverlay()->SetOverlayTexture(m_HUDHandle, &m_VKHUD.m_VRTexture);
 
     if (m_Game->m_VguiSurface->IsCursorVisible())
     {
         // We're in the pause menu
-        vr::VROverlay()->ShowOverlay(m_HUDHandle);
+        //vr::VROverlay()->ShowOverlay(m_HUDHandle);
     }
 
     vr::VRCompositor()->Submit(vr::Eye_Left, &m_VKLeftEye.m_VRTexture, &(m_TextureBounds)[0], vr::Submit_Default);
@@ -381,7 +382,7 @@ void VR::RepositionOverlays()
     vr::VROverlay()->SetOverlayWidthInMeters(m_MainMenuHandle, 1.5 * (1.0 / heightRatio));
 
     // Reposition HUD overlay
-    vr::HmdMatrix34_t hudTransform =
+    /*vr::HmdMatrix34_t hudTransform =
     {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
@@ -401,7 +402,7 @@ void VR::RepositionOverlays()
     hudTransform.m[2][2] *= cos(hmdRotationDegrees);
 
     vr::VROverlay()->SetOverlayTransformAbsolute(m_HUDHandle, trackingOrigin, &hudTransform);
-    vr::VROverlay()->SetOverlayWidthInMeters(m_HUDHandle, m_HudSize);
+    vr::VROverlay()->SetOverlayWidthInMeters(m_HUDHandle, m_HudSize);*/
 }
 
 void VR::GetPoses() 
@@ -469,8 +470,9 @@ bool VR::GetAnalogActionData(vr::VRActionHandle_t &actionHandle, vr::InputAnalog
 
 void VR::ProcessMenuInput()
 {
-    vr::VROverlayHandle_t currentOverlay = m_Game->m_EngineClient->IsInGame() ? m_HUDHandle : m_MainMenuHandle;
-    
+    //vr::VROverlayHandle_t currentOverlay = m_Game->m_EngineClient->IsInGame() ? m_HUDHandle : m_MainMenuHandle;
+    vr::VROverlayHandle_t currentOverlay = m_MainMenuHandle;
+
     // Check if left or right hand controller is pointing at the overlay
     const bool isHoveringOverlay = CheckOverlayIntersectionForController(currentOverlay, vr::TrackedControllerRole_LeftHand) ||
                                    CheckOverlayIntersectionForController(currentOverlay, vr::TrackedControllerRole_RightHand);
@@ -495,9 +497,10 @@ void VR::ProcessMenuInput()
                 float laserX = vrEvent.data.mouse.x;
                 float laserY = vrEvent.data.mouse.y;
 
-                if (currentOverlay == m_HUDHandle)
+                if (m_Game->m_EngineClient->IsInGame())
                 {
-                    laserY = -laserY + windowHeight;
+                    laserY -= (m_RenderHeight - windowHeight);
+                    laserY = windowHeight - laserY;
                 }
                 else // main menu (uses render sized texture)
                 {
@@ -521,12 +524,12 @@ void VR::ProcessMenuInput()
                 break;
 
             case vr::VREvent_MouseButtonUp:
-                if (currentOverlay == m_HUDHandle)
+                /*if (currentOverlay == m_HUDHandle)
                 {
                     input.type = INPUT_MOUSE;
                     input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
                     SendInput(1, &input, sizeof(INPUT));
-                }
+                }*/
                 input.type = INPUT_MOUSE;
                 input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
                 SendInput(1, &input, sizeof(INPUT));
@@ -604,7 +607,7 @@ void VR::ProcessInput()
     if (!m_IsVREnabled)
         return;
 
-    vr::VROverlay()->SetOverlayFlag(m_HUDHandle, vr::VROverlayFlags_MakeOverlaysInteractiveIfVisible, false);
+    //vr::VROverlay()->SetOverlayFlag(m_HUDHandle, vr::VROverlayFlags_MakeOverlaysInteractiveIfVisible, false);
 
     typedef std::chrono::duration<float, std::milli> duration;
     auto currentTime = std::chrono::steady_clock::now();
@@ -650,55 +653,6 @@ void VR::ProcessInput()
         // Wrap from 0 to 360
         m_RotationOffset.y -= 360 * std::floor(m_RotationOffset.y / 360);
     }
-
-    // TODO: Instead of ClientCmding, override Usercmd in CreateMove
-    /*if (GetAnalogActionData(m_ActionWalk, analogActionData))		
-    {
-        bool pushingStickX = true;
-        bool pushingStickY = true;
-        if (analogActionData.y > 0.5)	
-        {
-            m_Game->ClientCmd_Unrestricted("-back");
-            m_Game->ClientCmd_Unrestricted("+forward");
-        }
-        else if (analogActionData.y < -0.5)		
-        {
-            m_Game->ClientCmd_Unrestricted("-forward");
-            m_Game->ClientCmd_Unrestricted("+back");
-        }
-        else
-        {
-            m_Game->ClientCmd_Unrestricted("-back");
-            m_Game->ClientCmd_Unrestricted("-forward");
-            pushingStickY = false;
-        }
-
-        if (analogActionData.x > 0.5)		
-        {
-            m_Game->ClientCmd_Unrestricted("-moveleft");
-            m_Game->ClientCmd_Unrestricted("+moveright");
-        }
-        else if (analogActionData.x < -0.5)		
-        {
-            m_Game->ClientCmd_Unrestricted("-moveright");
-            m_Game->ClientCmd_Unrestricted("+moveleft");
-        }
-        else
-        {
-            m_Game->ClientCmd_Unrestricted("-moveright");
-            m_Game->ClientCmd_Unrestricted("-moveleft");
-            pushingStickX = false;
-        }
-
-        m_PushingThumbstick = pushingStickX || pushingStickY;
-    }
-    else
-    {
-        m_Game->ClientCmd_Unrestricted("-forward");
-        m_Game->ClientCmd_Unrestricted("-back");
-        m_Game->ClientCmd_Unrestricted("-moveleft");
-        m_Game->ClientCmd_Unrestricted("-moveright");
-    }*/
 
     if (PressedDigitalAction(m_ActionPrimaryAttack))
     {
@@ -796,6 +750,7 @@ void VR::ProcessInput()
     {
         vr::VROverlay()->HideOverlay(m_HUDHandle);
     }*/
+
     m_RenderedHud = false;
 
     if (PressedDigitalAction(m_Pause, true))
