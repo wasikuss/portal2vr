@@ -11,6 +11,7 @@
 #include <string>
 #include <filesystem>
 #include <thread>
+#include <type_traits>
 #include <algorithm>
 #include <d3d9_vr.h>
 
@@ -1120,8 +1121,9 @@ void VR::UpdateTracking()
 
     PositionAngle viewmodelOffset = PositionAngle{ {4.5, -1, 1.5}, {0,0,0} };
 
-    m_ViewmodelPosOffset = viewmodelOffset.position;
-    m_ViewmodelAngOffset = viewmodelOffset.angle;
+    // Apply both hardcoded and custom (from config) viewmodel offsets here:
+    m_ViewmodelPosOffset = viewmodelOffset.position + m_ViewmodelPosCustomOffset;
+    m_ViewmodelAngOffset = viewmodelOffset.angle + m_ViewmodelAngCustomOffset;
 
     m_ViewmodelForward = m_RightControllerForward;
     m_ViewmodelUp = m_RightControllerUp;
@@ -1363,6 +1365,65 @@ Vector VR::TraceEye(uint32_t* localPlayer, Vector cameraPos, Vector eyePos, QAng
     return eyePos;
 }
 
+// [CONFIG PARSING UTILITY FUNCTION]
+// Generates an error message by stringifying and concatenating 'args...'.
+template <typename... Ts>
+static void concatErrorMsg(Game& game, const Ts&... args)
+{
+    std::ostringstream oss;
+    (oss << ... << args);
+    game.errorMsg(oss.str().c_str());
+}
+
+// [CONFIG PARSING UTILITY FUNCTION]
+// Attempts to parse an entry with key 'key' from the provided 'userConfig'. If the key is
+// missing or if the parsing fails, 'defaultValue' is returned and an error message is
+// generated.
+template <typename T>
+static T parseConfigEntry(
+    const std::unordered_map<std::string, std::string>& userConfig, Game& game,
+    const char* key, const T& defaultValue)
+try
+{
+    const auto itr = userConfig.find(key);
+
+    if (itr == userConfig.end())
+    {
+        concatErrorMsg(game, "Config entry with key '", key,
+            "' missing -- reverting to default value of '", defaultValue, "'");
+
+        return defaultValue;
+    }
+
+    const std::string& configValue = itr->second;
+
+    if constexpr (std::is_same_v<T, bool>)
+    {
+        return configValue == "true";
+    }
+    else if constexpr(std::is_floating_point_v<T>)
+    {
+        return std::stof(configValue);
+    }
+    else if constexpr(std::is_integral_v<T>)
+    {
+        return std::stol(configValue);
+    }
+    else
+    {
+        // Just a way of generating a compilation failure in case this branch is taken.
+        struct invalid_type;
+        return invalid_type{};
+    }
+}
+catch (const std::logic_error& e)
+{
+    concatErrorMsg(game, "Error parsing config entry with key '", key,
+        "' -- reverting to default value of '", defaultValue, "' -- error: (", e.what(), ")");
+
+    throw;
+}
+
 void VR::ParseConfigFile()
 {
     std::ifstream configStream("VR\\config.txt");
@@ -1384,18 +1445,41 @@ void VR::ParseConfigFile()
     if (userConfig.empty())
         return;
 
-    m_SnapTurning = userConfig["SnapTurning"] == "true";
-    m_SnapTurnAngle = std::stof(userConfig["SnapTurnAngle"]);
-    m_TurnSpeed = std::stof(userConfig["TurnSpeed"]);
-    m_LeftHanded = userConfig["LeftHanded"] == "true";
-    m_VRScale = std::stof(userConfig["VRScale"]);
-    m_IpdScale = std::stof(userConfig["IPDScale"]);
-    m_6DOF = userConfig["6DOF"] == "true";
-    m_HudDistance = std::stof(userConfig["HudDistance"]);
-    m_HudSize = std::stof(userConfig["HudSize"]);
-    m_HudAlwaysVisible = userConfig["HudAlwaysVisible"] == "true";
-    m_AimMode = std::stol(userConfig["AimMode"]);
-    m_AntiAliasing = std::stol(userConfig["AntiAliasing"]);
+    // Parse a single entry with key 'key' from the config into 'target'.
+    // If the entry does not exist, or if the parsing fails, sets 'target' to
+    // 'defaultValue'.
+    const auto parseOrDefault = [&](const char* key, auto& target,
+                                    const auto& defaultValue) 
+    { 
+        target = parseConfigEntry(userConfig, *m_Game, key, defaultValue);
+        std::cout << "Setting '" << key << "' to '" << target << "'\n";
+    };
+
+    // Parses a vector or angle from the config into 'target'. The XYZ coordinates
+    // are read from three separate config entries with key 'keyPrefix' + 'X'/'Y'/'Z'.
+    // If any entry does not exist, or if the parsing fails, sets the corresponding
+    // coordinate in 'target' to zero.
+    const auto parseXYZOrDefaultZero = [&](std::string keyPrefix, auto& target)
+    {
+        parseOrDefault((keyPrefix + "X").c_str(), target.x, 0.f);
+        parseOrDefault((keyPrefix + "Y").c_str(), target.y, 0.f);
+        parseOrDefault((keyPrefix + "Z").c_str(), target.z, 0.f);
+    };
+
+    parseOrDefault("SnapTurning", m_SnapTurning, false);
+    parseOrDefault("SnapTurnAngle", m_SnapTurnAngle, 45.0f);
+    parseOrDefault("TurnSpeed", m_TurnSpeed, 0.15f);
+    parseOrDefault("LeftHanded", m_LeftHanded, false);
+    parseOrDefault("VRScale", m_VRScale, 43.2f);
+    parseOrDefault("IPDScale", m_IpdScale, 1.0f);
+    parseOrDefault("6DOF", m_6DOF, false);
+    parseOrDefault("HudDistance", m_HudDistance, 1.3f);
+    parseOrDefault("HudSize", m_HudSize, 4.0f);
+    parseOrDefault("HudAlwaysVisible", m_HudAlwaysVisible, false);
+    parseOrDefault("AimMode", m_AimMode, 2);
+    parseOrDefault("AntiAliasing", m_AntiAliasing, 0);
+    parseXYZOrDefaultZero("ViewmodelPosCustomOffset", m_ViewmodelPosCustomOffset);
+    parseXYZOrDefaultZero("ViewmodelAngCustomOffset", m_ViewmodelAngCustomOffset);
 }
 
 void VR::WaitForConfigUpdate()
@@ -1417,15 +1501,20 @@ void VR::WaitForConfigUpdate()
             {
                 configLastModified = configModifiedTime;
                 ParseConfigFile();
+                
+                std::cout << "Successfully reloaded 'config.txt'\n";
             }
         }
         catch (const std::invalid_argument &e)
         {
-            m_Game->errorMsg("Failed to parse config.txt");
+            concatErrorMsg(
+                *m_Game, "Failed to parse 'config.txt' (", e.what(), ")");
         }
         catch (const std::filesystem::filesystem_error &e)
         {
-            m_Game->errorMsg("config.txt not found.");
+            concatErrorMsg(
+                *m_Game, "'config.txt' not found. (", e.what(), ")");
+            
             return;
         }
         

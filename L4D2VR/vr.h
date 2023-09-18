@@ -98,6 +98,9 @@ public:
 	Vector m_ViewmodelPosOffset;
 	QAngle m_ViewmodelAngOffset;
 
+	Vector m_ViewmodelPosCustomOffset; // Custom (from config) viewmodel position offset applied on top of hardcoded ones
+    QAngle m_ViewmodelAngCustomOffset; // Custom (from config) viewmodel angle offset applied on top of hardcoded ones
+
 	float m_Ipd;																	
 	float m_EyeZ;
 
