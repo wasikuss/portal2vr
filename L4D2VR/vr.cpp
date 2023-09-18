@@ -123,6 +123,7 @@ int VR::SetActionManifest(const char *fileName)
     m_Input->GetActionHandle("/actions/main/in/Walk", &m_ActionWalk);
     m_Input->GetActionHandle("/actions/main/in/Turn", &m_ActionTurn);
     m_Input->GetActionHandle("/actions/main/in/SecondaryAttack", &m_ActionSecondaryAttack);
+    m_Input->GetActionHandle("/actions/main/in/ThirdAttack", &m_ActionThirdAttack);
     m_Input->GetActionHandle("/actions/main/in/NextItem", &m_ActionNextItem);
     m_Input->GetActionHandle("/actions/main/in/PrevItem", &m_ActionPrevItem);
     m_Input->GetActionHandle("/actions/main/in/ResetPosition", &m_ActionResetPosition);
@@ -670,6 +671,15 @@ void VR::ProcessInput()
     else
     {
         m_Game->ClientCmd_Unrestricted("-attack2");
+    }
+
+    if (PressedDigitalAction(m_ActionThirdAttack))
+    {
+        m_Game->ClientCmd_Unrestricted("+attack3");
+    }
+    else
+    {
+        m_Game->ClientCmd_Unrestricted("-attack3");
     }
 
     if (PressedDigitalAction(m_ActionJump))

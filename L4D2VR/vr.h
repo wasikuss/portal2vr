@@ -151,6 +151,7 @@ public:
 	vr::VRActionHandle_t m_ActionJump;
 	vr::VRActionHandle_t m_ActionPrimaryAttack;
 	vr::VRActionHandle_t m_ActionSecondaryAttack;
+	vr::VRActionHandle_t m_ActionThirdAttack;
 	vr::VRActionHandle_t m_ActionReload;
 	vr::VRActionHandle_t m_ActionWalk;
 	vr::VRActionHandle_t m_ActionTurn;
